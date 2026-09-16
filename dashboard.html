@@ -272,13 +272,37 @@
         document.getElementById('userEmail').innerText = user.email;
         document.getElementById('userName').innerText = user.email.split('@')[0];
 
-        // Firestore se profile fetch
+        // Firestore se profile fetch (SELF-HEALING!)
         try {
-            const doc = await db.collection('users').doc(user.uid).get();
+            let doc = await db.collection('users').doc(user.uid).get();
+
+            // 🆕 AGAR PROFILE NAHI HAI (purane signup ke waqt rules ne
+            // block kiya tha) — AB BANA DO! (Rules ab theek hain)
+            if (!doc.exists) {
+                // Pehla user? → super-admin, warna owner
+                let role = 'owner';
+                const usersSnap = await db.collection('users').limit(1).get();
+                if (usersSnap.empty) role = 'super-admin';
+
+                await db.collection('users').doc(user.uid).set({
+                    email: user.email,
+                    name: user.displayName || user.email.split('@')[0],
+                    role: role,
+                    loginMethod: user.providerData[0] ? user.providerData[0].providerId : 'password',
+                    agencyId: role === 'super-admin' ? 'super-admin-hq' : null,
+                    permissions: { instant: true, stock: true },
+                    createdAt: new Date().toISOString(),
+                    repairedBy: 'dashboard-self-heal' // 🏷️ marker
+                });
+
+                // Nayi profile wapis fetch karo
+                doc = await db.collection('users').doc(user.uid).get();
+            }
+
             if (doc.exists) {
                 const data = doc.data();
 
-                // Naam (Google users ke liye displayName hota hai)
+                // Naam
                 if (data.name) {
                     document.getElementById('userName').innerText = data.name;
                 }
@@ -292,13 +316,18 @@
                 };
                 const badge = document.getElementById('roleBadge');
                 badge.innerText = roleNames[role] || role;
+                badge.style.background = '#27ae60';
 
                 // Badge color by role
                 if (role === 'owner') badge.classList.add('owner');
                 if (role === 'booker') badge.classList.add('booker');
             }
         } catch (error) {
-            console.error('Profile fetch error (Rules check karein):', error);
+            // 🆕 ERROR ko badge par hi dikhao (chupchaap mat marne do!)
+            console.error('Profile fetch error:', error);
+            const badge = document.getElementById('roleBadge');
+            badge.innerText = '⚠️ ' + (error.code || 'Error');
+            badge.style.background = '#e74c3c';
         }
     });
 
