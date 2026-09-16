@@ -1,0 +1,265 @@
+/* ============================================
+   🔐 EASY BILL GENERATOR — AUTH STYLES
+   (Bill app theme se match: dark blue + green)
+   ============================================ */
+:root {
+    --primary: #2c3e50;
+    --accent: #27ae60;
+    --share: #3498db;
+    --bg: #f4f7f6;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+}
+
+/* ============================================
+   🌐 LANGUAGE TOGGLE
+   ============================================ */
+.lang-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 5px;
+    z-index: 100;
+}
+.lang-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.lang-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* ============================================
+   🎴 AUTH CARD
+   ============================================ */
+.auth-wrapper { width: 100%; max-width: 400px; }
+.auth-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 30px 25px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    animation: cardIn 0.4s ease;
+}
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   ⚡ LOGO
+   ============================================ */
+.auth-logo { text-align: center; margin-bottom: 20px; }
+.logo-icon {
+    font-size: 40px;
+    background: var(--primary);
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px;
+}
+.app-title { color: var(--primary); font-size: 26px; }
+.app-subtitle { color: #7f8c8d; font-size: 13px; margin-top: 3px; }
+
+/* ============================================
+   🔄 TABS (Login / Sign Up)
+   ============================================ */
+.auth-tabs {
+    display: flex;
+    background: #ecf0f1;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    color: #7f8c8d;
+    transition: all 0.2s;
+}
+.auth-tab.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ============================================
+   📝 INPUTS
+   ============================================ */
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+.input-icon {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+    font-size: 14px;
+}
+.input-group input {
+    width: 100%;
+    padding: 13px 40px 13px 40px;
+    border: 2px solid #e0e6e8;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+    background: #fafbfc;
+}
+.input-group input:focus {
+    border-color: var(--share);
+    background: #fff;
+}
+.toggle-pass {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* ============================================
+   🟢 MAIN BUTTON (Login / Create Account)
+   ============================================ */
+.auth-btn-main {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 5px;
+}
+.auth-btn-main:hover { background: #219150; }
+.auth-btn-main:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   🌐 GOOGLE LOGIN (Divider + Button)
+   ============================================ */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 18px 0 15px;
+    color: #95a5a6;
+    font-size: 12px;
+    font-weight: bold;
+}
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #e0e6e8;
+}
+.divider span {
+    padding: 0 12px;
+}
+
+.google-btn {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    border: 2px solid #e0e6e8;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+.google-btn:hover {
+    background: #f8f9fa;
+    border-color: #4285F4;
+}
+.google-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   📝 SIGNUP NOTE
+   ============================================ */
+.signup-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--warning);
+    font-weight: bold;
+    margin-top: 12px;
+}
+
+/* ============================================
+   📢 MESSAGE AREA
+   ============================================ */
+.auth-message {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 13px;
+    min-height: 20px;
+    color: var(--danger);
+    font-weight: 600;
+}
+
+/* ============================================
+   ↔️ RTL (URDU) SUPPORT
+   ============================================ */
+[dir="rtl"] .lang-toggle {
+    right: auto;
+    left: 15px;
+}
+[dir="rtl"] .input-icon { 
+    left: auto; 
+    right: 14px; 
+}
+[dir="rtl"] .input-group input { 
+    padding: 13px 40px 13px 14px; 
+}
+[dir="rtl"] .toggle-pass { 
+    right: auto; 
+    left: 14px; 
+}
+
+/* ============================================
+   📱 MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 400px) {
+    .auth-card { padding: 22px 18px; }
+    .app-title { font-size: 22px; }
+    .logo-icon { width: 60px; height: 60px; font-size: 34px; }
+}
