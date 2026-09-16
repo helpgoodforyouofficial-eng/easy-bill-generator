@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — Dashboard</title>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --share: #3498db;
+            --bg: #f4f7f6;
+            --danger: #e74c3c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: var(--primary);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .top-bar .brand {
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .top-bar .brand .logo-mini {
+            background: var(--accent);
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Main Card */
+        .card {
+            background: #fff;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .welcome-section {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 25px;
+        }
+        .welcome-section h1 {
+            color: var(--primary);
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .role-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+        .role-badge.owner { background: var(--share); }
+        .role-badge.booker { background: #f39c12; }
+        .user-email {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        /* Phase Note */
+        .phase-note {
+            background: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: #856404;
+        }
+
+        /* Coming Soon Modules */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .module-card {
+            background: #f8f9fa;
+            border: 2px dashed #d5dbdb;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            opacity: 0.7;
+        }
+        .module-card .icon { font-size: 32px; margin-bottom: 8px; }
+        .module-card h3 { font-size: 15px; color: var(--primary); margin-bottom: 5px; }
+        .module-card p { font-size: 12px; color: #7f8c8d; }
+        .module-card .soon-tag {
+            display: inline-block;
+            background: #f39c12;
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-logout { background: var(--danger); color: #fff; }
+        .btn-logout:hover { background: #c0392b; }
+
+        @media (max-width: 600px) {
+            .top-bar { flex-direction: column; gap: 10px; text-align: center; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="top-bar">
+    <div class="brand">
+        <div class="logo-mini">⚡</div>
+        Easy Bill Generator
+    </div>
+    <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+</div>
+
+<!-- ===== MAIN CARD ===== -->
+<div class="card">
+
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1>Dashboard</h1>
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="role-badge" id="roleBadge">...</div>
+        <div class="user-email" id="userEmail">...</div>
+    </div>
+
+    <!-- Phase Note -->
+    <div class="phase-note">
+        📌 <strong>Phase 1 Complete!</strong> Login system working. 
+        <br>Agle phases mein: User Management, Stock Manager, Dual Bill System, Reports — sab aane wala hai!
+    </div>
+
+    <!-- Coming Soon Modules -->
+    <div class="modules-grid">
+        <div class="module-card">
+            <div class="icon">👥</div>
+            <h3>User Management</h3>
+            <p>Bookers & Agencies</p>
+            <span class="soon-tag">PHASE 2</span>
+        </div>
+        <div class="module-card">
+            <div class="icon">📦</div>
+            <h3>Stock Manager</h3>
+            <p>Items & Inventory</p>
+            <span class="soon-tag">PHASE 3</span>
+        </div>
+        <div class="module-card">
+            <div class="icon">⚡📦</div>
+            <h3>Dual Bill System</h3>
+            <p>Instant & Stock Bills</p>
+            <span class="soon-tag">PHASE 4</span>
+        </div>
+        <div class="module-card">
+            <div class="icon">📊</div>
+            <h3>Reports</h3>
+            <p>Daily, Weekly, Monthly</p>
+            <span class="soon-tag">PHASE 5</span>
+        </div>
+        <div class="module-card">
+            <div class="icon">💾</div>
+            <h3>Google Drive Backup</h3>
+            <p>Safe & Secure</p>
+            <span class="soon-tag">PHASE 6</span>
+        </div>
+        <div class="module-card">
+            <div class="icon">🔔</div>
+            <h3>Low Stock Alerts</h3>
+            <p>Never Run Out</p>
+            <span class="soon-tag">PHASE 7</span>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+        <button class="btn btn-logout" id="logoutBtn2">🚪 Logout</button>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // ⚠️ AAP KA CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyDDwKWcixoUThCJQqiVoBcUVsJZI60h43Q",
+        authDomain: "multipos-ed91a.firebaseapp.com",
+        projectId: "multipos-ed91a",
+        storageBucket: "multipos-ed91a.firebasestorage.app",
+        messagingSenderId: "862649586987",
+        appId: "1:862649586987:web:599772124e4e29404ca16e",
+        measurementId: "G-QPCP7S5Q5L"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================
+    // 👤 USER INFO LOAD (Naam + Role + Email)
+    // ============================================
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            // Login nahi hai → auth.html wapas
+            window.location.href = 'auth.html';
+            return;
+        }
+
+        // Email default
+        document.getElementById('userEmail').innerText = user.email;
+        document.getElementById('userName').innerText = user.email.split('@')[0];
+
+        // Firestore se profile fetch
+        try {
+            const doc = await db.collection('users').doc(user.uid).get();
+            if (doc.exists) {
+                const data = doc.data();
+
+                // Naam (Google users ke liye displayName hota hai)
+                if (data.name) {
+                    document.getElementById('userName').innerText = data.name;
+                }
+
+                // Role badge
+                const role = data.role;
+                const roleNames = {
+                    'super-admin': '👑 SUPER ADMIN',
+                    'owner': '🏢 AGENCY OWNER',
+                    'booker': '📕 BOOKER'
+                };
+                const badge = document.getElementById('roleBadge');
+                badge.innerText = roleNames[role] || role;
+
+                // Badge color by role
+                if (role === 'owner') badge.classList.add('owner');
+                if (role === 'booker') badge.classList.add('booker');
+            }
+        } catch (error) {
+            console.error('Profile fetch error (Rules check karein):', error);
+        }
+    });
+
+    // ============================================
+    // 🚪 LOGOUT (Dono buttons)
+    // ============================================
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('logoutBtn2').addEventListener('click', doLogout);
+
+    async function doLogout() {
+        const result = await Swal.fire({
+            title: 'Logout?',
+            text: 'Kya aap logout karna chahte hain?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            cancelButtonColor: '#95a5a6',
+            confirmButtonText: 'Haan, Logout',
+            cancelButtonText: 'Cancel'
+        });
+        if (result.isConfirmed) {
+            await auth.signOut();
+            window.location.href = 'auth.html';
+        }
+    }
+</script>
+</body>
+</html>
