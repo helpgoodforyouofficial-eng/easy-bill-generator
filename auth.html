@@ -68,6 +68,55 @@
 
         <!-- ===== SIGNUP FORM (Hidden by default) ===== -->
         <form id="signupForm" class="auth-form" style="display:none;">
+            
+            <!-- 🆕 BUSINESS INFO SECTION -->
+            <div class="section-title" data-i18n="bizSection">🏢 Business Information</div>
+            
+            <div class="input-group">
+                <i class="fas fa-store input-icon"></i>
+                <input type="text" id="bizName" placeholder="Business Name *" required maxlength="50" autocomplete="organization">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-tags input-icon"></i>
+                <select id="bizType" class="select-input" required>
+                    <option value="" data-i18n="selectType">Business Type *</option>
+                    <option value="medical">🏪 Medical Store</option>
+                    <option value="general">🏪 General Store</option>
+                    <option value="mobile">📱 Mobile Shop</option>
+                    <option value="garments">👔 Garments</option>
+                    <option value="shoes">👟 Shoes Store</option>
+                    <option value="electric">⚡ Electric/Electronics</option>
+                    <option value="hardware">🔧 Hardware</option>
+                    <option value="cosmetics">💄 Cosmetics</option>
+                    <option value="repair">📱 Computer/Mobile Repair</option>
+                    <option value="autoparts">🚗 Auto Parts</option>
+                    <option value="sabzi">🥬 Sabzi/Fruit Mandi</option>
+                    <option value="chicken">🍗 Chicken/Meat Shop</option>
+                    <option value="bakery">🍞 Bakery/Food</option>
+                    <option value="books">📚 Book Store</option>
+                    <option value="gift">🎁 Gift Shop</option>
+                    <option value="furniture">🏠 Furniture</option>
+                    <option value="workshop">🛠️ Workshop</option>
+                    <option value="wholesaler">📦 Wholesaler</option>
+                    <option value="other">💼 Other</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-mobile-alt input-icon"></i>
+                <input type="tel" id="bizMobile" placeholder="Mobile Number (optional)" autocomplete="tel">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-city input-icon"></i>
+                <input type="text" id="bizCity" placeholder="City (optional)" maxlength="30">
+            </div>
+            <div class="input-group">
+                <i class="fas fa-user input-icon"></i>
+                <input type="text" id="ownerName" placeholder="Your Full Name (optional)" maxlength="40" autocomplete="name">
+            </div>
+
+            <!-- 🆕 ACCOUNT SECTION -->
+            <div class="section-title" data-i18n="accSection">🔐 Account Details</div>
+
             <div class="input-group">
                 <i class="fas fa-envelope input-icon"></i>
                 <input type="email" id="signupEmail" placeholder="Email" required autocomplete="email">
@@ -81,8 +130,9 @@
                 <i class="fas fa-lock input-icon"></i>
                 <input type="password" id="signupConfirm" placeholder="Confirm Password" required minlength="6">
             </div>
+            
             <button type="submit" class="auth-btn-main" id="signupBtn">
-                <span data-i18n="signupBtn">Create Account</span>
+                <span data-i18n="signupBtn">Create Account — FREE</span>
             </button>
 
             <!-- 🌐 GOOGLE SIGNUP -->
@@ -98,7 +148,7 @@
             </button>
 
             <p class="signup-note" data-i18n="signupNote">
-                First account becomes Super Admin!
+                🆓 FREE Package: 150 bills/month + 2 bookers!
             </p>
         </form>
 
@@ -108,7 +158,7 @@
     </div>
 </div>
 
-<!-- Firebase SDK (Compat — simple HTML projects ke liye) -->
+<!-- Firebase SDK (Compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
