@@ -87,16 +87,23 @@
         }
         .role-badge.owner { background: var(--share); }
         .role-badge.booker { background: #f39c12; }
-        .user-email {
-            color: #7f8c8d;
-            font-size: 14px;
+        .user-email { color: #7f8c8d; font-size: 14px; }
+        .user-name { font-size: 18px; font-weight: bold; color: #333; margin-top: 5px; }
+
+        /* Business Info Card */
+        .biz-info {
+            background: #eef2f7;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .user-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-top: 5px;
-        }
+        .biz-item { text-align: center; }
+        .biz-item .label { font-size: 11px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; }
+        .biz-item .value { font-size: 15px; font-weight: bold; color: var(--primary); }
 
         /* Phase Note */
         .phase-note {
@@ -139,11 +146,7 @@
         }
 
         /* Actions */
-        .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .btn {
             padding: 12px 24px;
             border: none;
@@ -155,6 +158,26 @@
         }
         .btn-logout { background: var(--danger); color: #fff; }
         .btn-logout:hover { background: #c0392b; }
+        .btn-enter { background: var(--accent); color: #fff; }
+        .btn-enter:hover { background: #219150; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(44,62,80,0.95); z-index: 9999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #fff;
+        }
+        .loading-overlay .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 600px) {
             .top-bar { flex-direction: column; gap: 10px; text-align: center; }
@@ -164,8 +187,14 @@
 </head>
 <body>
 
+<!-- ⏳ LOADING OVERLAY (role check hone tak) -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div id="loadingText">Loading your workspace...</div>
+</div>
+
 <!-- ===== TOP BAR ===== -->
-<div class="top-bar">
+<div class="top-bar" style="display:none;" id="topBar">
     <div class="brand">
         <div class="logo-mini">⚡</div>
         Easy Bill Generator
@@ -174,7 +203,7 @@
 </div>
 
 <!-- ===== MAIN CARD ===== -->
-<div class="card">
+<div class="card" style="display:none;" id="mainCard">
 
     <!-- Welcome Section -->
     <div class="welcome-section">
@@ -184,10 +213,27 @@
         <div class="user-email" id="userEmail">...</div>
     </div>
 
+    <!-- 🆕 BUSINESS INFO (agency data se bharega) -->
+    <div class="biz-info" id="bizInfo" style="display:none;">
+        <div class="biz-item">
+            <div class="label">🏢 Business</div>
+            <div class="value" id="bizName">—</div>
+        </div>
+        <div class="biz-item">
+            <div class="label">🏪 Type</div>
+            <div class="value" id="bizType">—</div>
+        </div>
+        <div class="biz-item">
+            <div class="label">💳 Package</div>
+            <div class="value" id="bizPackage">—</div>
+        </div>
+    </div>
+
     <!-- Phase Note -->
     <div class="phase-note">
-        📌 <strong>Phase 1 Complete!</strong> Login system working. 
-        <br>Agle phases mein: User Management, Stock Manager, Dual Bill System, Reports — sab aane wala hai!
+        📌 <strong>Phase 2 In Progress!</strong> 
+        <br>Signup ab OPEN hai — har user apni agency bana kar Free Package ke sath kaam shuru kar sakta hai!
+        <br>Coming: Stock Manager, Dual Bills, Reports, Backup!
     </div>
 
     <!-- Coming Soon Modules -->
@@ -195,7 +241,7 @@
         <div class="module-card">
             <div class="icon">👥</div>
             <h3>User Management</h3>
-            <p>Bookers & Agencies</p>
+            <p>Bookers & Permissions</p>
             <span class="soon-tag">PHASE 2</span>
         </div>
         <div class="module-card">
@@ -232,6 +278,10 @@
 
     <!-- Actions -->
     <div class="actions">
+        <!-- 🆕 Role-wise ENTER button (Super Admin → admin panel, Owner → owner panel) -->
+        <button class="btn btn-enter" id="enterPanelBtn" style="display:none;">
+            ➡️ Enter Panel
+        </button>
         <button class="btn btn-logout" id="logoutBtn2">🚪 Logout</button>
     </div>
 
@@ -259,11 +309,41 @@
     const db = firebase.firestore();
 
     // ============================================
-    // 👤 USER INFO LOAD (Naam + Role + Email)
+    // 📋 BUSINESS TYPES (Signup dropdown wali — display ke liye)
+    // ============================================
+    const BUSINESS_TYPES = {
+        'medical': '🏪 Medical Store',
+        'general': '🏪 General Store',
+        'mobile': '📱 Mobile Shop',
+        'garments': '👔 Garments',
+        'shoes': '👟 Shoes Store',
+        'electric': '⚡ Electric/Electronics',
+        'hardware': '🔧 Hardware',
+        'cosmetics': '💄 Cosmetics',
+        'repair': '📱 Computer/Mobile Repair',
+        'autoparts': '🚗 Auto Parts',
+        'sabzi': '🥬 Sabzi/Fruit Mandi',
+        'chicken': '🍗 Chicken/Meat Shop',
+        'bakery': '🍞 Bakery/Food',
+        'books': '📚 Book Store',
+        'gift': '🎁 Gift Shop',
+        'furniture': '🏠 Furniture',
+        'workshop': '🛠️ Workshop',
+        'wholesaler': '📦 Wholesaler',
+        'other': '💼 Other'
+    };
+
+    const PACKAGE_NAMES = {
+        'free': '🆓 FREE',
+        'basic': '💳 BASIC',
+        'pro': '💎 PRO'
+    };
+
+    // ============================================
+    // 👤 USER LOAD + ROLE-WISE ROUTING (Self-Healing!)
     // ============================================
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
-            // Login nahi hai → auth.html wapas
             window.location.href = 'auth.html';
             return;
         }
@@ -272,14 +352,12 @@
         document.getElementById('userEmail').innerText = user.email;
         document.getElementById('userName').innerText = user.email.split('@')[0];
 
-        // Firestore se profile fetch (SELF-HEALING!)
         try {
+            // Profile fetch
             let doc = await db.collection('users').doc(user.uid).get();
 
-            // 🆕 AGAR PROFILE NAHI HAI (purane signup ke waqt rules ne
-            // block kiya tha) — AB BANA DO! (Rules ab theek hain)
+            // 🆕 SELF-HEAL: Profile nahi? (naya ya purana toota user) — BANA DO!
             if (!doc.exists) {
-                // Pehla user? → super-admin, warna owner
                 let role = 'owner';
                 const usersSnap = await db.collection('users').limit(1).get();
                 if (usersSnap.empty) role = 'super-admin';
@@ -289,50 +367,79 @@
                     name: user.displayName || user.email.split('@')[0],
                     role: role,
                     loginMethod: user.providerData[0] ? user.providerData[0].providerId : 'password',
-                    agencyId: role === 'super-admin' ? 'super-admin-hq' : null,
+                    agencyId: null, // 🆕 ab agency signup par banti hai
                     permissions: { instant: true, stock: true },
                     createdAt: new Date().toISOString(),
-                    repairedBy: 'dashboard-self-heal' // 🏷️ marker
+                    repairedBy: 'dashboard-self-heal'
                 });
-
-                // Nayi profile wapis fetch karo
                 doc = await db.collection('users').doc(user.uid).get();
             }
 
-            if (doc.exists) {
-                const data = doc.data();
+            const data = doc.data();
 
-                // Naam
-                if (data.name) {
-                    document.getElementById('userName').innerText = data.name;
-                }
-
-                // Role badge
-                const role = data.role;
-                const roleNames = {
-                    'super-admin': '👑 SUPER ADMIN',
-                    'owner': '🏢 AGENCY OWNER',
-                    'booker': '📕 BOOKER'
-                };
-                const badge = document.getElementById('roleBadge');
-                badge.innerText = roleNames[role] || role;
-                badge.style.background = '#27ae60';
-
-                // Badge color by role
-                if (role === 'owner') badge.classList.add('owner');
-                if (role === 'booker') badge.classList.add('booker');
+            // Naam
+            if (data.name) {
+                document.getElementById('userName').innerText = data.name;
             }
-        } catch (error) {
-            // 🆕 ERROR ko badge par hi dikhao (chupchaap mat marne do!)
-            console.error('Profile fetch error:', error);
+
+            // Role badge
+            const role = data.role;
+            const roleNames = {
+                'super-admin': '👑 SUPER ADMIN',
+                'owner': '🏢 AGENCY OWNER',
+                'booker': '📕 BOOKER'
+            };
             const badge = document.getElementById('roleBadge');
-            badge.innerText = '⚠️ ' + (error.code || 'Error');
-            badge.style.background = '#e74c3c';
+            badge.innerText = roleNames[role] || role;
+            badge.style.background = '#27ae60';
+            if (role === 'owner') badge.classList.add('owner');
+            if (role === 'booker') badge.classList.add('booker');
+
+            // 🆕 BUSINESS INFO (agar agencyId hai to agency fetch karo)
+            if (data.agencyId) {
+                const agencyDoc = await db.collection('agencies').doc(data.agencyId).get();
+                if (agencyDoc.exists) {
+                    const ag = agencyDoc.data();
+                    document.getElementById('bizName').innerText = ag.name || '—';
+                    document.getElementById('bizType').innerText = BUSINESS_TYPES[ag.businessType] || ag.businessType || '—';
+                    document.getElementById('bizPackage').innerText = PACKAGE_NAMES[ag.packageId] || ag.packageId || 'Free';
+                    document.getElementById('bizInfo').style.display = 'flex';
+                }
+            }
+
+            // 🆕 ROLE-WISE ENTER BUTTON (routing!)
+            const enterBtn = document.getElementById('enterPanelBtn');
+            if (role === 'super-admin') {
+                enterBtn.innerText = '👑 Enter Super Admin Panel';
+                enterBtn.onclick = () => window.location.href = 'admin.html';
+                enterBtn.style.display = 'inline-block';
+            } else if (role === 'owner') {
+                enterBtn.innerText = '🏢 Enter Owner Panel';
+                enterBtn.onclick = () => window.location.href = 'owner.html';
+                enterBtn.style.display = 'inline-block';
+            } else if (role === 'booker') {
+                enterBtn.innerText = '📕 Start Working (Bills)';
+                enterBtn.onclick = () => window.location.href = 'bill-screen.html'; // Phase 4
+                // Phase 4 tak tak — abhi chhupa rahe hain
+                // enterBtn.style.display = 'inline-block';
+            }
+
+            // 🎉 Sab load ho gaya — overlay hatao!
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('topBar').style.display = 'flex';
+            document.getElementById('mainCard').style.display = 'block';
+
+        } catch (error) {
+            // Error ko overlay par hi dikhao
+            console.error('Dashboard load error:', error);
+            document.getElementById('loadingText').innerText = 
+                '⚠️ Error: ' + (error.code || error.message);
+            document.getElementById('loadingText').style.color = '#ff6b6b';
         }
     });
 
     // ============================================
-    // 🚪 LOGOUT (Dono buttons)
+    // 🚪 LOGOUT
     // ============================================
     document.getElementById('logoutBtn').addEventListener('click', doLogout);
     document.getElementById('logoutBtn2').addEventListener('click', doLogout);
