@@ -352,11 +352,10 @@
         document.getElementById('userEmail').innerText = user.email;
         document.getElementById('userName').innerText = user.email.split('@')[0];
 
-        try {
-            // Profile fetch
+                try {
+            // Profile fetch (self-heal ke sath)
             let doc = await db.collection('users').doc(user.uid).get();
 
-            // 🆕 SELF-HEAL: Profile nahi? (naya ya purana toota user) — BANA DO!
             if (!doc.exists) {
                 let role = 'owner';
                 const usersSnap = await db.collection('users').limit(1).get();
@@ -366,8 +365,7 @@
                     email: user.email,
                     name: user.displayName || user.email.split('@')[0],
                     role: role,
-                    loginMethod: user.providerData[0] ? user.providerData[0].providerId : 'password',
-                    agencyId: null, // 🆕 ab agency signup par banti hai
+                    agencyId: null,
                     permissions: { instant: true, stock: true },
                     createdAt: new Date().toISOString(),
                     repairedBy: 'dashboard-self-heal'
@@ -376,38 +374,56 @@
             }
 
             const data = doc.data();
-
-            // Naam
-            if (data.name) {
-                document.getElementById('userName').innerText = data.name;
-            }
-
-            // Role badge
             const role = data.role;
+
+            // Naam — default email prefix
+            let displayName = user.email.split('@')[0];
+            if (data.name) displayName = data.name;
+
+            // Role badge — default
+            const badge = document.getElementById('roleBadge');
             const roleNames = {
                 'super-admin': '👑 SUPER ADMIN',
                 'owner': '🏢 AGENCY OWNER',
                 'booker': '📕 BOOKER'
             };
-            const badge = document.getElementById('roleBadge');
-            badge.innerText = roleNames[role] || role;
+            let badgeText = roleNames[role] || role;
             badge.style.background = '#27ae60';
-            if (role === 'owner') badge.classList.add('owner');
-            if (role === 'booker') badge.classList.add('booker');
 
-            // 🆕 BUSINESS INFO (agar agencyId hai to agency fetch karo)
-            if (data.agencyId) {
+            // 🆕 OWNER: Agency fetch — Business name + Category-aware badge!
+            if (role === 'owner' && data.agencyId) {
                 const agencyDoc = await db.collection('agencies').doc(data.agencyId).get();
                 if (agencyDoc.exists) {
                     const ag = agencyDoc.data();
+                    
+                    // 1️⃣ NAAM: Business Name priority (email digits NAHI!)
+                    if (ag.name) displayName = ag.name;
+                    else if (data.name) displayName = data.name;
+
+                    // 2️⃣ BADGE: "🏪 Medical Store Owner" (category + Owner)
+                    const typeLabel = BUSINESS_TYPES[ag.businessType] || ag.businessType || '';
+                    badgeText = typeLabel ? `${typeLabel} Owner` : '🏢 Agency Owner';
+                    
+                    // Business info card
                     document.getElementById('bizName').innerText = ag.name || '—';
-                    document.getElementById('bizType').innerText = BUSINESS_TYPES[ag.businessType] || ag.businessType || '—';
-                    document.getElementById('bizPackage').innerText = PACKAGE_NAMES[ag.packageId] || ag.packageId || 'Free';
+                    document.getElementById('bizType').innerText = typeLabel || '—';
+                    document.getElementById('bizPackage').innerText = PACKAGE_NAMES[ag.packageId] || ag.packageId || '🆓 FREE';
                     document.getElementById('bizInfo').style.display = 'flex';
                 }
             }
 
-            // 🆕 ROLE-WISE ENTER BUTTON (routing!)
+            // Super Admin ka naam bhi profile se
+            if (role === 'super-admin' && data.name) {
+                displayName = data.name;
+            }
+
+            // Apply
+            document.getElementById('userName').innerText = displayName;
+            badge.innerText = badgeText;
+            if (role === 'owner') badge.classList.add('owner');
+            if (role === 'booker') badge.classList.add('booker');
+
+            // Role-wise routing button
             const enterBtn = document.getElementById('enterPanelBtn');
             if (role === 'super-admin') {
                 enterBtn.innerText = '👑 Enter Super Admin Panel';
@@ -417,26 +433,20 @@
                 enterBtn.innerText = '🏢 Enter Owner Panel';
                 enterBtn.onclick = () => window.location.href = 'owner.html';
                 enterBtn.style.display = 'inline-block';
-            } else if (role === 'booker') {
-                enterBtn.innerText = '📕 Start Working (Bills)';
-                enterBtn.onclick = () => window.location.href = 'bill-screen.html'; // Phase 4
-                // Phase 4 tak tak — abhi chhupa rahe hain
-                // enterBtn.style.display = 'inline-block';
             }
 
-            // 🎉 Sab load ho gaya — overlay hatao!
+            // Overlay hatao
             document.getElementById('loadingOverlay').style.display = 'none';
             document.getElementById('topBar').style.display = 'flex';
             document.getElementById('mainCard').style.display = 'block';
 
         } catch (error) {
-            // Error ko overlay par hi dikhao
             console.error('Dashboard load error:', error);
             document.getElementById('loadingText').innerText = 
                 '⚠️ Error: ' + (error.code || error.message);
             document.getElementById('loadingText').style.color = '#ff6b6b';
         }
-    });
+        });
 
     // ============================================
     // 🚪 LOGOUT
