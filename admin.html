@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — Super Admin Panel</title>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Panels CSS -->
+    <link rel="stylesheet" href="panels.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="panel-topbar">
+    <div class="brand">
+        <div class="logo-mini">👑</div>
+        <div>
+            <div class="brand-name">Super Admin Panel</div>
+            <div class="brand-sub" id="adminEmail">...</div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-back" onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+        <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="panel-container">
+
+    <!-- ===== 🆕 CREATE AGENCY SECTION ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-plus-circle"></i> Create New Agency</h2>
+        </div>
+        <form id="createAgencyForm" class="panel-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🏢 Agency Name *</label>
+                    <input type="text" id="agName" placeholder="e.g. GS Bag House" required maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>🏪 Business Type *</label>
+                    <select id="agType" required>
+                        <option value="">— Select Type —</option>
+                        <option value="medical">🏪 Medical Store</option>
+                        <option value="general">🏪 General Store</option>
+                        <option value="mobile">📱 Mobile Shop</option>
+                        <option value="garments">👔 Garments</option>
+                        <option value="shoes">👟 Shoes Store</option>
+                        <option value="electric">⚡ Electric/Electronics</option>
+                        <option value="hardware">🔧 Hardware</option>
+                        <option value="cosmetics">💄 Cosmetics</option>
+                        <option value="repair">📱 Computer/Mobile Repair</option>
+                        <option value="autoparts">🚗 Auto Parts</option>
+                        <option value="sabzi">🥬 Sabzi/Fruit Mandi</option>
+                        <option value="chicken">🍗 Chicken/Meat Shop</option>
+                        <option value="bakery">🍞 Bakery/Food</option>
+                        <option value="books">📚 Book Store</option>
+                        <option value="gift">🎁 Gift Shop</option>
+                        <option value="furniture">🏠 Furniture</option>
+                        <option value="workshop">🛠️ Workshop</option>
+                        <option value="wholesaler">📦 Wholesaler</option>
+                        <option value="other">💼 Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📧 Owner Email *</label>
+                    <input type="email" id="agEmail" placeholder="owner@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>🔑 Owner Password * (min 6)</label>
+                    <input type="text" id="agPassword" placeholder="Password (owner can change later)" required minlength="6">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💳 Package *</label>
+                    <select id="agPackage" required>
+                        <option value="free" selected>🆓 FREE (150 bills/mo)</option>
+                        <option value="basic">💳 BASIC (500 bills/mo)</option>
+                        <option value="pro">💎 PRO (Unlimited)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📱 Owner Mobile (optional)</label>
+                    <input type="tel" id="agMobile" placeholder="03xx-xxxxxxx">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="createAgencyBtn">
+                <i class="fas fa-plus"></i> CREATE AGENCY
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 📊 PACKAGES EDITOR ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-sliders-h"></i> Package Limits (Editable)</h2>
+            <small class="header-note">Change karte hi sab agencies par apply ho jayega!</small>
+        </div>
+        <div id="packagesEditor">
+            <div class="loading-inline">Loading packages...</div>
+        </div>
+    </div>
+
+    <!-- ===== 🏢 AGENCIES LIST ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-building"></i> All Agencies (<span id="agencyCount">0</span>)</h2>
+        </div>
+        <div id="agenciesList">
+            <div class="loading-inline">Loading agencies...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // ⚠️ AAP KA CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyDDwKWcixoUThCJQqiVoBcUVsJZI60h43Q",
+        authDomain: "multipos-ed91a.firebaseapp.com",
+        projectId: "multipos-ed91a",
+        storageBucket: "multipos-ed91a.firebasestorage.app",
+        messagingSenderId: "862649586987",
+        appId: "1:862649586987:web:599772124e4e29404ca16e",
+        measurementId: "G-QPCP7S5Q5L"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================
+    // 🛡️ GUARD: Sirf Super Admin andar aa sakta hai
+    // ============================================
+    let currentAdminUid = null;
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'auth.html';
+            return;
+        }
+        const doc = await db.collection('users').doc(user.uid).get();
+        if (!doc.exists || doc.data().role !== 'super-admin') {
+            // Super admin nahi — bhaga do!
+            Swal.fire('⛔ Access Denied', 'Sirf Super Admin yahan aa sakta hai!', 'error')
+                .then(() => window.location.href = 'dashboard.html');
+            return;
+        }
+        currentAdminUid = user.uid;
+        document.getElementById('adminEmail').innerText = user.email;
+        
+        // Sab load karo
+        loadPackages();
+        loadAgencies();
+    });
+
+    // ============================================
+    // 💳 PACKAGES: Load + Edit (Limits!)
+    // ============================================
+    const DEFAULT_PACKAGES = {
+        free: { name: '🆓 FREE', limits: { monthlyBills: 150, weeklyBills: 50, maxBookers: 2, maxAdmins: 1, dailyOrdersPerBooker: 30 } },
+        basic: { name: '💳 BASIC', limits: { monthlyBills: 500, weeklyBills: 150, maxBookers: 5, maxAdmins: 2, dailyOrdersPerBooker: 60 } },
+        pro: { name: '💎 PRO', limits: { monthlyBills: 9999, weeklyBills: 9999, maxBookers: 50, maxAdmins: 10, dailyOrdersPerBooker: 500 } }
+    };
+
+    async function loadPackages() {
+        const container = document.getElementById('packagesEditor');
+        try {
+            const snap = await db.collection('packages').get();
+            
+            // Agar packages abhi bane nahi — defaults se banao!
+            if (snap.empty) {
+                for (const [id, pkg] of Object.entries(DEFAULT_PACKAGES)) {
+                    await db.collection('packages').doc(id).set(pkg);
+                }
+                renderPackages(DEFAULT_PACKAGES);
+                return;
+            }
+
+            // Existing packages render karo
+            const pkgs = {};
+            snap.forEach(d => { pkgs[d.id] = d.data(); });
+            renderPackages(pkgs);
+
+        } catch (e) {
+            container.innerHTML = '<div class="error-inline">⚠️ Packages load failed: ' + e.code + '</div>';
+        }
+    }
+
+    function renderPackages(pkgs) {
+        const container = document.getElementById('packagesEditor');
+        let html = '';
+        
+        for (const [id, pkg] of Object.entries(pkgs)) {
+            const lim = pkg.limits || {};
+            html += `
+            <div class="package-editor" data-pkg="${id}">
+                <div class="pkg-title">${pkg.name || id}</div>
+                <div class="pkg-limits">
+                    <div class="limit-item">
+                        <label>📅 Monthly Bills</label>
+                        <input type="number" class="lim-monthly" value="${lim.monthlyBills || 0}" min="0">
+                    </div>
+                    <div class="limit-item">
+                        <label>📅 Weekly Bills</label>
+                        <input type="number" class="lim-weekly" value="${lim.weeklyBills || 0}" min="0">
+                    </div>
+                    <div class="limit-item">
+                        <label>📕 Max Bookers</label>
+                        <input type="number" class="lim-bookers" value="${lim.maxBookers || 0}" min="0">
+                    </div>
+                    <div class="limit-item">
+                        <label>👔 Max Admins</label>
+                        <input type="number" class="lim-admins" value="${lim.maxAdmins || 0}" min="0">
+                    </div>
+                    <div class="limit-item">
+                        <label>📈 Daily Orders/Booker</label>
+                        <input type="number" class="lim-daily" value="${lim.dailyOrdersPerBooker || 0}" min="0">
+                    </div>
+                </div>
+                <button class="btn btn-save-pkg" onclick="savePackage('${id}')">
+                    💾 Save ${pkg.name || id} Limits
+                </button>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    async function savePackage(pkgId) {
+        const box = document.querySelector(`.package-editor[data-pkg="${pkgId}"]`);
+        const limits = {
+            monthlyBills: parseInt(box.querySelector('.lim-monthly').value) || 0,
+            weeklyBills: parseInt(box.querySelector('.lim-weekly').value) || 0,
+            maxBookers: parseInt(box.querySelector('.lim-bookers').value) || 0,
+            maxAdmins: parseInt(box.querySelector('.lim-admins').value) || 0,
+            dailyOrdersPerBooker: parseInt(box.querySelector('.lim-daily').value) || 0
+        };
+
+        try {
+            // Purana naam preserve karo
+            const doc = await db.collection('packages').doc(pkgId).get();
+            const name = doc.exists ? doc.data().name : pkgId;
+            
+            await db.collection('packages').doc(pkgId).set({
+                name: name,
+                limits: limits,
+                updatedAt: new Date().toISOString(),
+                updatedBy: currentAdminUid
+            });
+
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2000, icon: 'success',
+                title: `✅ ${pkgId.toUpperCase()} limits saved!`
+            });
+        } catch (e) {
+            Swal.fire('Error', 'Limits save nahi huin: ' + e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🏢 CREATE AGENCY (+ Owner account!)
+    // ============================================
+    document.getElementById('createAgencyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('agName').value.trim();
+        const bizType = document.getElementById('agType').value;
+        const email = document.getElementById('agEmail').value.trim().toLowerCase();
+        const password = document.getElementById('agPassword').value;
+        const pkgId = document.getElementById('agPackage').value;
+        const mobile = document.getElementById('agMobile').value.trim();
+
+        // Validations
+        if (!name || !bizType) {
+            Swal.fire('⚠️', 'Agency Name aur Business Type lazmi hain!', 'warning');
+            return;
+        }
+        if (password.length < 6) {
+            Swal.fire('⚠️', 'Password min 6 characters ka ho!', 'warning');
+            return;
+        }
+
+        btnLoading('createAgencyBtn', true);
+
+        try {
+            // ⚠️ TRICK: Naya owner banane ke liye SECOND Firebase app
+            // (warna current admin ki session logout ho jayegi!)
+            const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary-' + Date.now());
+            const secondaryAuth = secondaryApp.auth();
+
+            // 1. Owner account banao (secondary app se — session safe!)
+            const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+            const ownerUid = cred.user.uid;
+
+            // 2. Secondary app band karo (session safe)
+            await secondaryApp.signOut();
+            secondaryApp.delete();
+
+            // 3. Agency document banao
+            const agencyRef = await db.collection('agencies').add({
+                name: name,
+                businessType: bizType,
+                packageId: pkgId,
+                status: 'active',
+                ownerUid: ownerUid,
+                ownerEmail: email,
+                ownerMobile: mobile || '',
+                createdAt: new Date().toISOString(),
+                createdBy: currentAdminUid
+            });
+
+            // 4. Owner ki user profile banao (role: owner, agency linked!)
+            await db.collection('users').doc(ownerUid).set({
+                email: email,
+                name: name + ' (Owner)',
+                role: 'owner',
+                loginMethod: 'password',
+                agencyId: agencyRef.id,
+                permissions: { instant: true, stock: true },
+                createdAt: new Date().toISOString(),
+                createdBy: currentAdminUid
+            });
+
+            // ✅ Success!
+            btnLoading('createAgencyBtn', false);
+            await Swal.fire({
+                icon: 'success',
+                title: '🎉 Agency Created!',
+                html: `<b>${name}</b><br>Owner: ${email}<br>Package: ${pkgId.toUpperCase()}<br><br>Owner ab apne email/password se login kar sakta hai!`,
+                timer: 4000
+            });
+
+            // Form reset + list refresh
+            document.getElementById('createAgencyForm').reset();
+            loadAgencies();
+
+        } catch (error) {
+            btnLoading('createAgencyBtn', false);
+            let msg = 'Agency create nahi hui: ' + error.code;
+            if (error.code === 'auth/email-already-in-use') {
+                msg = 'Ye email pehle se used hai! Doosra email try karein.';
+            }
+            Swal.fire('❌ Error', msg, 'error');
+        }
+    });
+
+    // ============================================
+    // 📋 AGENCIES LIST (Live)
+    // ============================================
+    async function loadAgencies() {
+        const container = document.getElementById('agenciesList');
+        try {
+            const snap = await db.collection('agencies').orderBy('createdAt', 'desc').get();
+            
+            document.getElementById('agencyCount').innerText = snap.size;
+
+            if (snap.empty) {
+                container.innerHTML = '<div class="empty-state">🏢 Koi agency nahi hai abhi.<br>Pehli agency upar se CREATE karein!</div>';
+                return;
+            }
+
+            let html = '';
+            snap.forEach(doc => {
+                const ag = doc.data();
+                const statusClass = ag.status === 'active' ? 'st-active' : 'st-inactive';
+                const statusText = ag.status === 'active' ? '✅ Active' : '⛔ Deactivated';
+                
+                html += `
+                <div class="agency-item" data-id="${doc.id}">
+                    <div class="agency-main">
+                        <div class="agency-name">🏢 ${ag.name}</div>
+                        <div class="agency-meta">
+                            📧 ${ag.ownerEmail} | 💳 ${String(ag.packageId).toUpperCase()} 
+                            | <span class="${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="agency-actions">
+                        <button class="btn-sm btn-toggle" onclick="toggleAgency('${doc.id}', '${ag.status}')">
+                            ${ag.status === 'active' ? '⛔ Deactivate' : '✅ Activate'}
+                        </button>
+                        <button class="btn-sm btn-delete" onclick="deleteAgency('${doc.id}', '${ag.name}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+
+        } catch (e) {
+            container.innerHTML = '<div class="error-inline">⚠️ Agencies load failed: ' + e.code + '</div>';
+        }
+    }
+
+    // ============================================
+    // ⛔ TOGGLE AGENCY (Activate/Deactivate)
+    // ============================================
+    async function toggleAgency(agencyId, currentStatus) {
+        const newStatus = currentStatus === 'active' ? 'deactivated' : 'active';
+        const isUrduMsg = newStatus === 'deactivated' 
+            ? 'Kya aap ye agency deactivate karna chahte hain? Owner aur bookers login NAHI kar payenge!'
+            : 'Kya aap ye agency dobara activate karna chahte hain?';
+
+        const result = await Swal.fire({
+            title: newStatus === 'deactivated' ? '⛔ Deactivate?' : '✅ Activate?',
+            text: isUrduMsg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: newStatus === 'deactivated' ? '#e74c3c' : '#27ae60',
+            confirmButtonText: 'Haan, Confirm',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await db.collection('agencies').doc(agencyId).update({
+                status: newStatus,
+                statusChangedAt: new Date().toISOString(),
+                statusChangedBy: currentAdminUid
+            });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2000, icon: 'success',
+                title: `✅ Agency ${newStatus}!`
+            });
+            loadAgencies();
+        } catch (e) {
+            Swal.fire('Error', 'Status change fail: ' + e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🗑️ DELETE AGENCY (Dangerous — double confirm!)
+    // ============================================
+    async function deleteAgency(agencyId, agencyName) {
+        const result = await Swal.fire({
+            title: '🗑️ DELETE Agency?',
+            html: `<b>${agencyName}</b> ko permanently delete karna hai?<br><br>
+                   <span style="color:#e74c3c; font-weight:bold;">⚠️ WARNING: Agency ka sara data
+                   (bills, bookers, stock) delete ho jayega!<br>Ye UNDO nahi ho sakta!</span>`,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#c0392b',
+            confirmButtonText: '🗑️ Haan, DELETE',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            // Agency document delete (users/bills Phase 4 mein cascade hongi)
+            await db.collection('agencies').doc(agencyId).delete();
+            
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2000, icon: 'success',
+                title: '🗑️ Agency deleted!'
+            });
+            loadAgencies();
+        } catch (e) {
+            Swal.fire('Error', 'Delete fail: ' + e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🚪 LOGOUT
+    // ============================================
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: 'Logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            confirmButtonText: 'Haan',
+            cancelButtonText: 'Cancel'
+        });
+        if (result.isConfirmed) {
+            await auth.signOut();
+            window.location.href = 'auth.html';
+        }
+    });
+
+    function btnLoading(btnId, loading) {
+        document.getElementById(btnId).disabled = loading;
+    }
+</script>
+</body>
+</html>
