@@ -30,6 +30,12 @@ const AUTH_TEXTS = {
         loginBtn: "Login",
         signupBtn: "Create Account",
         googleBtn: "Continue with Google",
+        bizSection: "🏢 Business Information",
+        accSection: "🔐 Account Details",
+        selectType: "Business Type *",
+        msgBizName: "Business Name lazmi hai!",
+        msgBizType: "Business Type select karein!",
+        msgAgencyDone: "🎉 Agency created! Welcome to Free Package!",
         signupNote: "First account becomes Super Admin!",
         msgCreated: "Account created! Super Admin setup complete ✅",
         msgNoMatch: "Passwords do not match!",
@@ -49,6 +55,12 @@ const AUTH_TEXTS = {
         loginBtn: "لاگ اِن کریں",
         signupBtn: "اکاؤنٹ بنائیں",
         googleBtn: "گوگل کے ساتھ جاری رکھیں",
+        bizSection: "🏢 کاروبار کی معلومات",
+        accSection: "🔐 اکاؤنٹ کی تفصیلات",
+        selectType: "کاروبار کی قسم *",
+        msgBizName: "کاروبار کا نام لازمی ہے!",
+        msgBizType: "کاروبار کی قسم منتخب کریں!",
+        msgAgencyDone: "🎉 ایجنسی بن گئی! فری پیکج میں خوش آمدید!",
         signupNote: "پہلا اکاؤنٹ سپر ایڈمن بنے گا!",
         msgCreated: "اکاؤنٹ بن گیا! سپر ایڈمن سیٹ اپ مکمل ✅",
         msgNoMatch: "پاس ورڈ میچ نہیں ہو رہے!",
@@ -192,43 +204,77 @@ document.addEventListener('DOMContentLoaded', function() {
     // -------------------------------------------
     // 📝 SIGNUP — PEHLA USER = SUPER ADMIN
     // -------------------------------------------
-    signupForm.addEventListener('submit', async (e) => {
+        signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         document.getElementById('authMessage').innerText = '';
 
         // Firebase ready check
         if (!firebaseReady) return showAuthMsg('msgFirebaseLoad');
 
+        // 🆕 Business fields bhi collect karo!
+        const bizName = document.getElementById('bizName').value.trim();
+        const bizType = document.getElementById('bizType').value;
+        const bizMobile = document.getElementById('bizMobile').value.trim();
+        const bizCity = document.getElementById('bizCity').value.trim();
+        const ownerName = document.getElementById('ownerName').value.trim();
+
         const email = document.getElementById('signupEmail').value.trim();
         const pass = document.getElementById('signupPassword').value;
         const confirm = document.getElementById('signupConfirm').value;
 
-        // ✅ Validations
+        // ✅ Validations (Business Name + Type LAZMI!)
+        if (!bizName) return showAuthMsg('msgBizName');
+        if (!bizType) return showAuthMsg('msgBizType');
         if (pass.length < 6) return showAuthMsg('msgShort');
         if (pass !== confirm) return showAuthMsg('msgNoMatch');
 
         btnLoading('signupBtn', true);
 
         try {
-            // 1. Firebase Auth — user create
-            const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            const uid = cred.user.uid;
-
-            // 2. Pehla user hai? → SUPER ADMIN
+            // 1. Pehla user check (pehla = super-admin, baqi = owner)
             let role = 'owner';
             try {
                 const usersSnap = await db.collection('users').limit(1).get();
                 if (usersSnap.empty) role = 'super-admin';
             } catch (ruleErr) {
-                console.warn('Firestore read issue (Rules check karein):', ruleErr);
+                console.warn('Read check:', ruleErr);
             }
 
-            // 3. Profile save
+            // 2. Firebase Auth — user create
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            const uid = cred.user.uid;
+
+            // 3. 🆕 AGENCY CREATE (owner ke liye — Free package!)
+            let agencyId = null;
+            if (role === 'owner') {
+                // Free package ki limits fetch karo
+                let limits = { monthlyBills: 150, weeklyBills: 50, maxBookers: 2, maxAdmins: 1, dailyOrdersPerBooker: 30 };
+                try {
+                    const pkgDoc = await db.collection('packages').doc('free').get();
+                    if (pkgDoc.exists) limits = pkgDoc.data().limits;
+                } catch (e) { /* default limits use hongi */ }
+
+                const agencyRef = await db.collection('agencies').add({
+                    name: bizName,
+                    businessType: bizType,
+                    mobile: bizMobile || '',
+                    city: bizCity || '',
+                    packageId: 'free',
+                    status: 'active',
+                    ownerUid: uid,
+                    ownerEmail: email,
+                    createdAt: new Date().toISOString()
+                });
+                agencyId = agencyRef.id;
+            }
+
+            // 4. User profile save (agency linked!)
             await db.collection('users').doc(uid).set({
                 email: email,
+                name: ownerName || bizName + ' (Owner)',
                 role: role,
                 loginMethod: 'email',
-                agencyId: role === 'super-admin' ? 'super-admin-hq' : null,
+                agencyId: role === 'super-admin' ? 'super-admin-hq' : agencyId,
                 permissions: { instant: true, stock: true },
                 createdAt: new Date().toISOString(),
                 createdBy: role === 'super-admin' ? 'system-first' : 'signup'
@@ -236,13 +282,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // ✅ Success!
             btnLoading('signupBtn', false);
+            
+            const T2 = T();
             await Swal.fire({
                 icon: 'success',
-                title: T().msgCreated,
-                timer: 2500,
+                title: role === 'super-admin' ? T2.msgCreated : T2.msgAgencyDone,
+                text: role === 'owner' ? `🏢 ${bizName} — Free Package Active!` : '',
+                timer: 3000,
                 showConfirmButton: false,
                 timerProgressBar: true
             });
+
             window.location.href = 'dashboard.html';
 
         } catch (error) {
