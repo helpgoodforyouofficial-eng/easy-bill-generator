@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — Stock Manager</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stock CSS -->
+    <link rel="stylesheet" href="stock.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="panel-topbar">
+    <div class="brand">
+        <div class="logo-mini">📦</div>
+        <div>
+            <div class="brand-name">Stock Manager</div>
+            <div class="brand-sub" id="agencyName">...</div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-back" onclick="window.location.href='owner.html'">🏢 Panel</button>
+        <button class="btn btn-logout" id="logoutBtn">🚪</button>
+    </div>
+</div>
+
+<div class="panel-container">
+
+    <!-- ===== 📊 STATS CARDS (4x) ===== -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#3498db;">📦</div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Items</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#27ae60;">💰</div>
+            <div class="stat-value" id="statValue">0</div>
+            <div class="stat-label">Stock Value</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f39c12;">⚠️</div>
+            <div class="stat-value" id="statLow">0</div>
+            <div class="stat-label">Low Stock</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e74c3c;">💥</div>
+            <div class="stat-value" id="statOut">0</div>
+            <div class="stat-label">Out of Stock</div>
+        </div>
+    </div>
+
+    <!-- ===== 🔍 SEARCH + FILTERS (Sticky) ===== -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Item ka naam likhein...">
+        </div>
+        <div class="filter-chips">
+            <button class="filter-chip active" data-filter="all">All</button>
+            <button class="filter-chip" data-filter="low">⚠️ Low</button>
+            <button class="filter-chip" data-filter="out">💥 Out</button>
+            <button class="filter-chip" data-filter="instock">✅ In Stock</button>
+        </div>
+    </div>
+
+    <!-- ===== ➕ ADD ITEM (Collapsible Form) ===== -->
+    <div class="panel-card">
+        <div class="add-item-header" id="addItemToggle">
+            <h2><i class="fas fa-plus-circle"></i> Add New Item</h2>
+            <i class="fas fa-chevron-down toggle-arrow" id="toggleArrow"></i>
+        </div>
+        <form id="addItemForm" class="panel-form" style="display:none;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📝 Item Name *</label>
+                    <input type="text" id="itemName" placeholder="e.g. Baby Oil" required maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>📏 Unit *</label>
+                    <select id="itemUnit" required>
+                        <option value="unit">Unit</option>
+                        <optgroup label="⚖️ Weight">
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="g">Gram (g)</option>
+                            <option value="pound">Pound (lb)</option>
+                            <option value="maund">Maund (40kg)</option>
+                        </optgroup>
+                        <optgroup label="🧴 Volume">
+                            <option value="liter">Liter (L)</option>
+                            <option value="gallon">Gallon</option>
+                        </optgroup>
+                        <optgroup label="🔢 Count">
+                            <option value="pcs">Piece (pcs)</option>
+                            <option value="dozen">Dozen</option>
+                        </optgroup>
+                        <optgroup label="📦 Packing">
+                            <option value="packet">Packet</option>
+                            <option value="bag">Bag</option>
+                            <option value="box">Box</option>
+                            <option value="carton">Carton</option>
+                            <option value="bottle">Bottle</option>
+                            <option value="can">Can</option>
+                        </optgroup>
+                        <optgroup label="📏 Length">
+                            <option value="meter">Meter (m)</option>
+                            <option value="feet">Feet (ft)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🔢 Quantity *</label>
+                    <input type="number" id="itemQty" placeholder="0" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>💰 Sale Rate *</label>
+                    <input type="number" id="itemRate" placeholder="0" required min="0" step="0.01">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💵 Purchase Rate (optional)</label>
+                    <input type="number" id="itemPurchase" placeholder="0" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>⚠️ Low Stock Limit (optional)</label>
+                    <input type="number" id="itemLimit" placeholder="10" min="0">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="saveItemBtn">
+                <i class="fas fa-save"></i> SAVE ITEM
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 📋 ITEMS LIST ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-boxes"></i> Items (<span id="itemCount">0</span>/<span id="itemLimit">50</span>)</h2>
+        </div>
+        <div id="itemsList">
+            <div class="loading-inline">Loading items...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="stock.js"></script>
+</body>
+</html>
