@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — Owner Panel</title>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Panels CSS -->
+    <link rel="stylesheet" href="panels.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="panel-topbar">
+    <div class="brand">
+        <div class="logo-mini">🏢</div>
+        <div>
+            <div class="brand-name" id="agencyName">Loading...</div>
+            <div class="brand-sub" id="ownerEmail">...</div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-back" onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+        <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="panel-container">
+
+    <!-- ===== 📊 LIMITS INFO ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-chart-bar"></i> Your Package & Limits</h2>
+        </div>
+        <div class="biz-info-row" id="limitsInfo">
+            <div class="loading-inline">Loading limits...</div>
+        </div>
+    </div>
+
+    <!-- ===== ➕ ADD BOOKER ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-user-plus"></i> Add New Booker</h2>
+            <small class="header-note">Booker apne orders/bills banaye ga — aap permissions set karein!</small>
+        </div>
+        <form id="addBookerForm" class="panel-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📕 Booker Name *</label>
+                    <input type="text" id="bkName" placeholder="e.g. Ali Ahmed" required maxlength="40">
+                </div>
+                <div class="form-group">
+                    <label>📧 Booker Email *</label>
+                    <input type="email" id="bkEmail" placeholder="booker@example.com" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🔑 Password * (min 6 — aap baad mein change kar sakte hain!)</label>
+                    <input type="text" id="bkPassword" placeholder="Password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>⚡ Permissions *</label>
+                    <div class="perm-checks">
+                        <label class="perm-check"><input type="checkbox" id="permInstant" checked> ⚡ Instant Bill</label>
+                        <label class="perm-check"><input type="checkbox" id="permStock"> 📦 Stock Bill</label>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="addBookerBtn">
+                <i class="fas fa-user-plus"></i> ADD BOOKER
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 📋 BOOKERS LIST ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-users"></i> My Bookers (<span id="bookerCount">0</span>)</h2>
+        </div>
+        <div id="bookersList">
+            <div class="loading-inline">Loading bookers...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // ⚠️ AAP KA CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyDDwKWcixoUThCJQqiVoBcUVsJZI60h43Q",
+        authDomain: "multipos-ed91a.firebaseapp.com",
+        projectId: "multipos-ed91a",
+        storageBucket: "multipos-ed91a.firebasestorage.app",
+        messagingSenderId: "862649586987",
+        appId: "1:862649586987:web:599772124e4e29404ca16e",
+        measurementId: "G-QPCP7S5Q5L"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================
+    // 🛡️ GUARD: Sirf OWNER andar
+    // ============================================
+    let myUid = null;
+    let myAgencyId = null;
+    let myAgency = null;
+    let myLimits = null;
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'auth.html';
+            return;
+        }
+        myUid = user.uid;
+        document.getElementById('ownerEmail').innerText = user.email;
+
+        const doc = await db.collection('users').doc(user.uid).get();
+        
+        if (!doc.exists) {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+        const me = doc.data();
+
+        // Super admin ko admin panel bhejo
+        if (me.role === 'super-admin') {
+            window.location.href = 'admin.html';
+            return;
+        }
+        // Booker ko dashboard bhejo (uska panel Phase 4)
+        if (me.role !== 'owner') {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // Agency load
+        if (!me.agencyId) {
+            Swal.fire('⚠️', 'Aap ki agency link nahi hai! Dashboard se profile complete karein.', 'warning')
+                .then(() => window.location.href = 'dashboard.html');
+            return;
+        }
+        myAgencyId = me.agencyId;
+        
+        const agDoc = await db.collection('agencies').doc(myAgencyId).get();
+        myAgency = agDoc.exists ? agDoc.data() : {};
+        document.getElementById('agencyName').innerText = myAgency.name || 'My Agency';
+
+        // Limits load (package se)
+        let pkgId = myAgency.packageId || 'free';
+        try {
+            const pkgDoc = await db.collection('packages').doc(pkgId).get();
+            myLimits = pkgDoc.exists ? pkgDoc.data().limits : null;
+        } catch (e) {}
+        if (!myLimits) {
+            myLimits = { monthlyBills: 150, weeklyBills: 50, maxBookers: 2, maxAdmins: 1, dailyOrdersPerBooker: 30 };
+        }
+
+        loadBookers();
+    });
+
+    // ============================================
+    // 📋 BOOKERS LOAD (meri agency ke — live count ke sath)
+    // ============================================
+    async function loadBookers() {
+        const container = document.getElementById('bookersList');
+        try {
+            const snap = await db.collection('users')
+                .where('agencyId', '==', myAgencyId)
+                .where('role', '==', 'booker')
+                .get();
+
+            // Active bookers count (deleted/block count nahi honge limit mein? — deleted nahi honge)
+            let activeCount = 0;
+            snap.forEach(d => {
+                if (d.data().status !== 'deleted') activeCount++;
+            });
+            document.getElementById('bookerCount').innerText = activeCount;
+
+            // Limits info card
+            const maxB = myLimits.maxBookers || 0;
+            const limitColor = activeCount >= maxB ? '#e74c3c' : '#27ae60';
+            document.getElementById('limitsInfo').innerHTML = `
+                <div class="biz-item">
+                    <div class="label">🏢 Agency</div>
+                    <div class="value">${myAgency.name || '—'}</div>
+                </div>
+                <div class="biz-item">
+                    <div class="label">💳 Package</div>
+                    <div class="value">${String(myAgency.packageId || 'free').toUpperCase()}</div>
+                </div>
+                <div class="biz-item">
+                    <div class="label">📕 Bookers Used</div>
+                    <div class="value" style="color:${limitColor};">${activeCount} / ${maxB}</div>
+                </div>
+                <div class="biz-item">
+                    <div class="label">📅 Monthly Bills Limit</div>
+                    <div class="value">${myLimits.monthlyBills || 0}</div>
+                </div>
+                <div class="biz-item">
+                    <div class="label">📈 Daily/Booker Limit</div>
+                    <div class="value">${myLimits.dailyOrdersPerBooker || 0}</div>
+                </div>`;
+
+            // List render
+            if (snap.empty) {
+                container.innerHTML = '<div class="empty-state">📕 Abhi koi booker nahi hai.<br>Upar se pehla BOOKER ADD karein!</div>';
+                return;
+            }
+
+            let html = '';
+            snap.forEach(d => {
+                const bk = d.data();
+                if (bk.status === 'deleted') return; // deleted chhupao
+
+                const statusHtml = bk.status === 'blocked'
+                    ? '<span class="st-inactive">🚫 Blocked</span>'
+                    : '<span class="st-active">✅ Active</span>';
+
+                const permInstant = bk.permissions && bk.permissions.instant;
+                const permStock = bk.permissions && bk.permissions.stock;
+
+                html += `
+                <div class="agency-item" data-id="${d.id}">
+                    <div class="agency-main">
+                        <div class="agency-name">📕 ${bk.name || bk.email}</div>
+                        <div class="agency-meta">
+                            📧 ${bk.email} | ${statusHtml}<br>
+                            ⚡ Instant: ${permInstant ? '✅' : '❌'} | 📦 Stock: ${permStock ? '✅' : '❌'}
+                        </div>
+                    </div>
+                    <div class="agency-actions">
+                        <button class="btn-sm btn-pass" onclick="changeBookerPassword('${d.id}')">🔑 Password</button>
+                        <button class="btn-sm btn-toggle" onclick="togglePerm('${d.id}', 'instant', ${permInstant})">⚡ Instant</button>
+                        <button class="btn-sm btn-toggle" onclick="togglePerm('${d.id}', 'stock', ${permStock})">📦 Stock</button>
+                        <button class="btn-sm ${bk.status === 'blocked' ? 'btn-activate' : 'btn-toggle'}" onclick="toggleBlock('${d.id}', '${bk.status || 'active'}')">
+                            ${bk.status === 'blocked' ? '✅ Unblock' : '🚫 Block'}
+                        </button>
+                        <button class="btn-sm btn-delete" onclick="deleteBooker('${d.id}', '${bk.name || bk.email}')">🗑️</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+
+        } catch (e) {
+            container.innerHTML = '<div class="error-inline">⚠️ Bookers load failed: ' + e.code + '</div>';
+            console.error(e);
+        }
+    }
+
+    // ============================================
+    // ➕ ADD BOOKER (Limit check + secondary app trick!)
+    // ============================================
+    document.getElementById('addBookerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('bkName').value.trim();
+        const email = document.getElementById('bkEmail').value.trim().toLowerCase();
+        const password = document.getElementById('bkPassword').value;
+        const permInstant = document.getElementById('permInstant').checked;
+        const permStock = document.getElementById('permStock').checked;
+
+        // Validations
+        if (!name) { Swal.fire('⚠️', 'Booker ka naam lazmi hai!', 'warning'); return; }
+        if (password.length < 6) { Swal.fire('⚠️', 'Password min 6 characters!', 'warning'); return; }
+        if (!permInstant && !permStock) {
+            Swal.fire('⚠️', 'Kam az kam 1 permission dein (Instant ya Stock)!', 'warning');
+            return;
+        }
+
+        // 🆕 LIMIT CHECK: Kitne booker already? Max se zyada to NAHI!
+        try {
+            const snap = await db.collection('users')
+                .where('agencyId', '==', myAgencyId)
+                .where('role', '==', 'booker')
+                .get();
+            let activeCount = 0;
+            snap.forEach(d => { if (d.data().status !== 'deleted') activeCount++; });
+
+            const maxB = myLimits.maxBookers || 0;
+            if (activeCount >= maxB) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '📦 Booker Limit Reached!',
+                    html: `Aap ka <b>${String(myAgency.packageId).toUpperCase()}</b> package mein max <b>${maxB} bookers</b> hain.<br><br>
+                           <span style="color:#e74c3c; font-weight:bold;">💎 Package upgrade ke liye admin se contact karein!</span>`,
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+        } catch (e) {
+            console.warn('Limit check skip:', e);
+        }
+
+        btnLoading('addBookerBtn', true);
+
+        try {
+            // 🔧 SECONDARY APP TRICK (owner ki session safe rahegi!)
+            const secondaryApp = firebase.initializeApp(firebaseConfig, 'Sec-' + Date.now());
+            const secondaryAuth = secondaryApp.auth();
+
+            // 1. Booker ka AUTH account banao
+            const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+            const bookerUid = cred.user.uid;
+
+            await secondaryAuth.signOut();
+            secondaryApp.delete();
+
+            // 2. Booker profile (Firestore) — agencyId MERI!
+            await db.collection('users').doc(bookerUid).set({
+                email: email,
+                name: name,
+                role: 'booker',
+                loginMethod: 'password',
+                agencyId: myAgencyId,
+                permissions: { instant: permInstant, stock: permStock },
+                status: 'active',
+                tempPassword: password,  // 🔑 owner adjustable — is liye store
+                createdAt: new Date().toISOString(),
+                createdBy: myUid
+            });
+
+            btnLoading('addBookerBtn', false);
+            await Swal.fire({
+                icon: 'success',
+                title: '🎉 Booker Added!',
+                html: `<b>${name}</b><br>📧 ${email}<br>⚡ ${permInstant ? 'Instant ✅' : '—'} | 📦 ${permStock ? 'Stock ✅' : '—'}`,
+                timer: 3500
+            });
+
+            document.getElementById('addBookerForm').reset();
+            document.getElementById('permInstant').checked = true; // default
+            loadBookers();
+
+        } catch (error) {
+            btnLoading('addBookerBtn', false);
+            let msg = 'Booker add nahi hua: ' + error.code;
+            if (error.code === 'auth/email-already-in-use') {
+                msg = 'Ye email already used hai! Doosra email try karein.';
+            }
+            Swal.fire('❌ Error', msg, 'error');
+        }
+    });
+
+    // ============================================
+    // 🔑 CHANGE BOOKER PASSWORD (Adjustable!)
+    // ============================================
+    async function changeBookerPassword(bookerId) {
+        // Purana password Firestore se lo (owner ke paas stored hai)
+        const doc = await db.collection('users').doc(bookerId).get();
+        if (!doc.exists) return;
+        const bk = doc.data();
+        const oldPass = bk.tempPassword || '';
+
+        const result = await Swal.fire({
+            title: '🔑 Change Password',
+            text: `Booker: ${bk.email}`,
+            input: 'text',
+            inputPlaceholder: 'Naya Password (min 6)',
+            showCancelButton: true,
+            confirmButtonColor: '#f39c12',
+            confirmButtonText: '🔑 Change',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+                if (!value || value.length < 6) return 'Min 6 characters!';
+            }
+        });
+
+        if (!result.isConfirmed) return;
+        const newPass = result.value;
+
+        try {
+            // 🔧 SECONDARY APP: booker ki identity se login → password update!
+            const secApp = firebase.initializeApp(firebaseConfig, 'PassChg-' + Date.now());
+            const secAuth = secApp.auth();
+
+            const cred = await secAuth.signInWithEmailAndPassword(bk.email, oldPass);
+            await cred.user.updatePassword(newPass);
+            await secAuth.signOut();
+            secApp.delete();
+
+            // Firestore mein stored password update
+            await db.collection('users').doc(bookerId).update({
+                tempPassword: newPass,
+                passwordChangedAt: new Date().toISOString()
+            });
+
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2200, icon: 'success',
+                title: '✅ Password changed!'
+            });
+        } catch (e) {
+            console.error(e);
+            let msg = 'Password change fail: ' + e.code;
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                msg = 'Purana password match nahi hua! Booker ne shayad khud change kiya hai.';
+            }
+            Swal.fire('❌ Error', msg, 'error');
+        }
+    }
+
+    // ============================================
+    // ⚡📦 PERMISSION TOGGLE
+    // ============================================
+    async function togglePerm(bookerId, perm, currentVal) {
+        try {
+            const doc = await db.collection('users').doc(bookerId).get();
+            const perms = doc.data().permissions || {};
+            perms[perm] = !currentVal;
+            
+            // Kam az kam 1 permission honi chahiye!
+            if (!perms.instant && !perms.stock) {
+                Swal.fire({
+                    toast: true, position: 'top-end', showConfirmButton: false,
+                    timer: 2000, icon: 'warning',
+                    title: '⚠️ Kam az kam 1 permission zaroori hai!'
+                });
+                return;
+            }
+
+            await db.collection('users').doc(bookerId).update({ permissions: perms });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 1500, icon: 'success',
+                title: `✅ ${perm === 'instant' ? 'Instant' : 'Stock'} ${perms[perm] ? 'ON' : 'OFF'}!`
+            });
+            loadBookers();
+        } catch (e) {
+            Swal.fire('Error', e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🚫 BLOCK / UNBLOCK
+    // ============================================
+    async function toggleBlock(bookerId, currentStatus) {
+        const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
+        try {
+            await db.collection('users').doc(bookerId).update({
+                status: newStatus,
+                statusChangedAt: new Date().toISOString()
+            });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 1800, icon: 'success',
+                title: newStatus === 'blocked' ? '🚫 Booker blocked!' : '✅ Booker unblocked!'
+            });
+            loadBookers();
+        } catch (e) {
+            Swal.fire('Error', e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🗑️ DELETE BOOKER (soft delete)
+    // ============================================
+    async function deleteBooker(bookerId, name) {
+        const result = await Swal.fire({
+            title: '🗑️ Delete Booker?',
+            html: `<b>${name}</b> ko delete karna hai?<br>
+                   <small style="color:#e74c3c;">Booker login NAHI kar payega.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#c0392b',
+            confirmButtonText: '🗑️ Delete',
+            cancelButtonText: 'Cancel'
+        });
+        if (!result.isConfirmed) return;
+
+        try {
+            await db.collection('users').doc(bookerId).update({
+                status: 'deleted',
+                deletedAt: new Date().toISOString()
+            });
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 1800, icon: 'success',
+                title: '🗑️ Booker deleted!'
+            });
+            loadBookers();
+        } catch (e) {
+            Swal.fire('Error', e.code, 'error');
+        }
+    }
+
+    // ============================================
+    // 🚪 LOGOUT
+    // ============================================
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: 'Logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            confirmButtonText: 'Haan',
+            cancelButtonText: 'Cancel'
+        });
+        if (result.isConfirmed) {
+            await auth.signOut();
+            window.location.href = 'auth.html';
+        }
+    });
+</script>
+</body>
+</html>
