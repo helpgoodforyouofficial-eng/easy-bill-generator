@@ -160,6 +160,8 @@
         .btn-logout:hover { background: #c0392b; }
         .btn-enter { background: var(--accent); color: #fff; }
         .btn-enter:hover { background: #219150; }
+        .btn-profile { background: var(--share); color: #fff; }
+        .btn-profile:hover { background: #2980b9; }
 
         /* Loading Overlay */
         .loading-overlay {
@@ -278,9 +280,13 @@
 
     <!-- Actions -->
     <div class="actions">
-        <!-- 🆕 Role-wise ENTER button (Super Admin → admin panel, Owner → owner panel) -->
+        <!-- Role-wise ENTER button (Super Admin → admin panel, Owner → owner panel) -->
         <button class="btn btn-enter" id="enterPanelBtn" style="display:none;">
             ➡️ Enter Panel
+        </button>
+        <!-- 👤 MY PROFILE BUTTON (naya — sab roles ke liye) -->
+        <button class="btn btn-profile" id="profileBtn" onclick="window.location.href='profile.html'">
+            👤 My Profile
         </button>
         <button class="btn btn-logout" id="logoutBtn2">🚪 Logout</button>
     </div>
@@ -309,7 +315,7 @@
     const db = firebase.firestore();
 
     // ============================================
-    // 📋 BUSINESS TYPES (Signup dropdown wali — display ke liye)
+    // 📋 BUSINESS TYPES (display ke liye)
     // ============================================
     const BUSINESS_TYPES = {
         'medical': '🏪 Medical Store',
@@ -352,7 +358,7 @@
         document.getElementById('userEmail').innerText = user.email;
         document.getElementById('userName').innerText = user.email.split('@')[0];
 
-                try {
+        try {
             // Profile fetch (self-heal ke sath)
             let doc = await db.collection('users').doc(user.uid).get();
 
@@ -374,7 +380,8 @@
             }
 
             const data = doc.data();
-                                // 🆕 BLOCKED/DELETED BOOKER GUARD
+
+            // 🆕 BLOCKED/DELETED BOOKER GUARD
             if (data.status === 'blocked') {
                 await auth.signOut();
                 Swal.fire('🚫 Blocked', 'Aap ka account admin ne block kiya hai! Contact karein.', 'error');
@@ -444,6 +451,21 @@
                 enterBtn.innerText = '🏢 Enter Owner Panel';
                 enterBtn.onclick = () => window.location.href = 'owner.html';
                 enterBtn.style.display = 'inline-block';
+            } else if (role === 'booker') {
+                // 🆕 BOOKER: Phase 4 tak — profile complete karne ka message
+                enterBtn.innerText = '📕 My Profile (Complete Setup)';
+                enterBtn.onclick = () => window.location.href = 'profile.html';
+                enterBtn.style.display = 'inline-block';
+                
+                // Booker ko info do (agar agency nahi hai)
+                if (!data.agencyId) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: '📕 Welcome Booker!',
+                        text: 'Bill system Phase 4 mein aayega. Filhal apni Profile complete karein!',
+                        confirmButtonText: 'OK'
+                    });
+                }
             }
 
             // Overlay hatao
@@ -457,7 +479,7 @@
                 '⚠️ Error: ' + (error.code || error.message);
             document.getElementById('loadingText').style.color = '#ff6b6b';
         }
-        });
+    });
 
     // ============================================
     // 🚪 LOGOUT
