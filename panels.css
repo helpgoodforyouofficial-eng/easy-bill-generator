@@ -279,3 +279,52 @@ body {
     .agency-actions { width: 100%; }
     .btn-sm { flex: 1; }
 }
+
+/* ============================================
+   🆕 OWNER PANEL EXTRAS
+   ============================================ */
+.biz-info-row {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.biz-info-row .biz-item { text-align: center; }
+.biz-info-row .label { 
+    font-size: 11px; 
+    color: #7f8c8d; 
+    text-transform: uppercase; 
+    font-weight: bold; 
+}
+.biz-info-row .value { 
+    font-size: 15px; 
+    font-weight: bold; 
+    color: var(--primary); 
+}
+
+.perm-checks {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    padding: 10px 0;
+}
+.perm-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--primary);
+}
+.perm-check input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.btn-pass { background: var(--share); color: #fff; }
+.btn-pass:hover { background: #2980b9; }
+.btn-activate { background: var(--accent); color: #fff; }
+.btn-activate:hover { background: #219150; }
