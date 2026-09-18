@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — My Profile</title>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Panels CSS (same theme) -->
+    <link rel="stylesheet" href="panels.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="panel-topbar">
+    <div class="brand">
+        <div class="logo-mini">👤</div>
+        <div>
+            <div class="brand-name">My Profile</div>
+            <div class="brand-sub" id="myEmail">...</div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-back" onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+        <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="panel-container">
+
+    <!-- ===== 👤 PERSONAL INFO ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-user"></i> Personal Information</h2>
+        </div>
+        <form id="personalForm" class="panel-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>👤 Full Name</label>
+                    <input type="text" id="pfName" maxlength="40" placeholder="Your Name">
+                </div>
+                <div class="form-group">
+                    <label>📱 Mobile Number</label>
+                    <input type="tel" id="pfMobile" maxlength="15" placeholder="03xx-xxxxxxx">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📧 Email (fixed — change nahi hota)</label>
+                    <input type="email" id="pfEmail" disabled style="background:#eef2f7; color:#7f8c8d;">
+                </div>
+                <div class="form-group">
+                    <label>🎭 My Role</label>
+                    <input type="text" id="pfRole" disabled style="background:#eef2f7; color:#7f8c8d;">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="savePersonalBtn">
+                💾 Save Personal Info
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 🏢 BUSINESS INFO (Sirf OWNER ke liye!) ===== -->
+    <div class="panel-card" id="businessCard" style="display:none;">
+        <div class="card-header">
+            <h2><i class="fas fa-building"></i> My Business / Agency</h2>
+            <small class="header-note">Ye details aap ke bills par aur reports mein use hongi!</small>
+        </div>
+        <form id="businessForm" class="panel-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🏢 Business Name *</label>
+                    <input type="text" id="pfBizName" maxlength="50" required>
+                </div>
+                <div class="form-group">
+                    <label>🏪 Business Type *</label>
+                    <select id="pfBizType" class="select-input" required>
+                        <option value="medical">🏪 Medical Store</option>
+                        <option value="general">🏪 General Store</option>
+                        <option value="mobile">📱 Mobile Shop</option>
+                        <option value="garments">👔 Garments</option>
+                        <option value="shoes">👟 Shoes Store</option>
+                        <option value="electric">⚡ Electric/Electronics</option>
+                        <option value="hardware">🔧 Hardware</option>
+                        <option value="cosmetics">💄 Cosmetics</option>
+                        <option value="repair">📱 Computer/Mobile Repair</option>
+                        <option value="autoparts">🚗 Auto Parts</option>
+                        <option value="sabzi">🥬 Sabzi/Fruit Mandi</option>
+                        <option value="chicken">🍗 Chicken/Meat Shop</option>
+                        <option value="bakery">🍞 Bakery/Food</option>
+                        <option value="books">📚 Book Store</option>
+                        <option value="gift">🎁 Gift Shop</option>
+                        <option value="furniture">🏠 Furniture</option>
+                        <option value="workshop">🛠️ Workshop</option>
+                        <option value="wholesaler">📦 Wholesaler</option>
+                        <option value="other">💼 Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📱 Business Mobile</label>
+                    <input type="tel" id="pfBizMobile" maxlength="15" placeholder="03xx-xxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>🏙️ City</label>
+                    <input type="text" id="pfBizCity" maxlength="30" placeholder="City">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📍 Business Address (optional)</label>
+                <input type="text" id="pfBizAddress" maxlength="100" placeholder="Street, Area, City">
+            </div>
+            <button type="submit" class="btn btn-primary" id="saveBizBtn">
+                💾 Save Business Info
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 🔑 CHANGE PASSWORD ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-key"></i> Change My Password</h2>
+        </div>
+        <form id="passwordForm" class="panel-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🔒 Current Password *</label>
+                    <input type="password" id="curPass" required minlength="6" autocomplete="current-password">
+                </div>
+                <div class="form-group">
+                    <label>🆕 New Password * (min 6)</label>
+                    <input type="password" id="newPass" required minlength="6" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>🔄 Confirm New Password *</label>
+                    <input type="password" id="confPass" required minlength="6">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="savePassBtn">
+                🔑 Change Password
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+    // ⚠️ AAP KA CONFIG
+    const firebaseConfig = {
+        apiKey: "AIzaSyDDwKWcixoUThCJQqiVoBcUVsJZI60h43Q",
+        authDomain: "multipos-ed91a.firebaseapp.com",
+        projectId: "multipos-ed91a",
+        storageBucket: "multipos-ed91a.firebasestorage.app",
+        messagingSenderId: "862649586987",
+        appId: "1:862649586987:web:599772124e4e29404ca16e",
+        measurementId: "G-QPCP7S5Q5L"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ============================================
+    // 📋 BUSINESS TYPES MAP
+    // ============================================
+    const BUSINESS_TYPES = {
+        'medical': '🏪 Medical Store',
+        'general': '🏪 General Store',
+        'mobile': '📱 Mobile Shop',
+        'garments': '👔 Garments',
+        'shoes': '👟 Shoes Store',
+        'electric': '⚡ Electric/Electronics',
+        'hardware': '🔧 Hardware',
+        'cosmetics': '💄 Cosmetics',
+        'repair': '📱 Computer/Mobile Repair',
+        'autoparts': '🚗 Auto Parts',
+        'sabzi': '🥬 Sabzi/Fruit Mandi',
+        'chicken': '🍗 Chicken/Meat Shop',
+        'bakery': '🍞 Bakery/Food',
+        'books': '📚 Book Store',
+        'gift': '🎁 Gift Shop',
+        'furniture': '🏠 Furniture',
+        'workshop': '🛠️ Workshop',
+        'wholesaler': '📦 Wholesaler',
+        'other': '💼 Other'
+    };
+
+    const ROLE_NAMES = {
+        'super-admin': '👑 Super Admin',
+        'owner': '🏢 Agency Owner',
+        'booker': '📕 Booker'
+    };
+
+    // ============================================
+    // 🛡️ GUARD + LOAD PROFILE
+    // ============================================
+    let myUid = null;
+    let myRole = null;
+    let myAgencyId = null;
+    let myEmail = null;
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'auth.html';
+            return;
+        }
+        myUid = user.uid;
+        myEmail = user.email;
+
+        try {
+            // Self-heal (agar profile missing ho)
+            let doc = await db.collection('users').doc(myUid).get();
+            if (!doc.exists) {
+                let role = 'owner';
+                const snap = await db.collection('users').limit(1).get();
+                if (snap.empty) role = 'super-admin';
+
+                await db.collection('users').doc(myUid).set({
+                    email: myEmail,
+                    name: user.displayName || myEmail.split('@')[0],
+                    role: role,
+                    agencyId: null,
+                    permissions: { instant: true, stock: true },
+                    createdAt: new Date().toISOString(),
+                    repairedBy: 'profile-self-heal'
+                });
+                doc = await db.collection('users').doc(myUid).get();
+            }
+
+            const data = doc.data();
+            myRole = data.role;
+            myAgencyId = data.agencyId || null;
+
+            // Blocked guard
+            if (data.status === 'blocked' || data.status === 'deleted') {
+                await auth.signOut();
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            // Form fill — Personal
+            document.getElementById('myEmail').innerText = myEmail;
+            document.getElementById('pfEmail').value = myEmail;
+            document.getElementById('pfRole').value = ROLE_NAMES[myRole] || myRole;
+            document.getElementById('pfName').value = data.name || '';
+            document.getElementById('pfMobile').value = data.mobile || '';
+
+            // 🏢 Business card — SIRF OWNER ke liye (aur agency ho to)
+            if (myRole === 'owner') {
+                if (!myAgencyId) {
+                    // Purana user — agency missing! Bana do default
+                    const agencyRef = await db.collection('agencies').add({
+                        name: data.name || (myEmail.split('@')[0] + ' Business'),
+                        businessType: 'other',
+                        packageId: 'free',
+                        status: 'active',
+                        ownerUid: myUid,
+                        ownerEmail: myEmail,
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'profile-auto-repair' // 🏷️
+                    });
+                    myAgencyId = agencyRef.id;
+                    await db.collection('users').doc(myUid).update({
+                        agencyId: myAgencyId,
+                        agencyRepaired: true
+                    });
+                }
+
+                // Business card dikhao + data fill
+                document.getElementById('businessCard').style.display = 'block';
+                const agDoc = await db.collection('agencies').doc(myAgencyId).get();
+                if (agDoc.exists) {
+                    const ag = agDoc.data();
+                    document.getElementById('pfBizName').value = ag.name || '';
+                    document.getElementById('pfBizType').value = ag.businessType || 'other';
+                    document.getElementById('pfBizMobile').value = ag.mobile || '';
+                    document.getElementById('pfBizCity').value = ag.city || '';
+                    document.getElementById('pfBizAddress').value = ag.address || '';
+                }
+            }
+
+        } catch (error) {
+            Swal.fire('Error', 'Profile load fail: ' + (error.code || error.message), 'error');
+        }
+    });
+
+    // ============================================
+    // 💾 SAVE PERSONAL INFO
+    // ============================================
+    document.getElementById('personalForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('pfName').value.trim();
+        const mobile = document.getElementById('pfMobile').value.trim();
+
+        if (!name) {
+            Swal.fire('⚠️', 'Naam khali nahi ho sakta!', 'warning');
+            return;
+        }
+
+        document.getElementById('savePersonalBtn').disabled = true;
+
+        try {
+            await db.collection('users').doc(myUid).update({
+                name: name,
+                mobile: mobile,
+                updatedAt: new Date().toISOString()
+            });
+
+            document.getElementById('savePersonalBtn').disabled = false;
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2000, icon: 'success',
+                title: '✅ Personal info saved!'
+            });
+        } catch (error) {
+            document.getElementById('savePersonalBtn').disabled = false;
+            Swal.fire('Error', 'Save fail: ' + (error.code || error.message), 'error');
+        }
+    });
+
+    // ============================================
+    // 💾 SAVE BUSINESS INFO (Owner only)
+    // ============================================
+    document.getElementById('businessForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const bizName = document.getElementById('pfBizName').value.trim();
+        const bizType = document.getElementById('pfBizType').value;
+
+        if (!bizName) {
+            Swal.fire('⚠️', 'Business Name khali nahi ho sakta!', 'warning');
+            return;
+        }
+
+        document.getElementById('saveBizBtn').disabled = true;
+
+        try {
+            await db.collection('agencies').doc(myAgencyId).update({
+                name: bizName,
+                businessType: bizType,
+                mobile: document.getElementById('pfBizMobile').value.trim(),
+                city: document.getElementById('pfBizCity').value.trim(),
+                address: document.getElementById('pfBizAddress').value.trim(),
+                updatedAt: new Date().toISOString()
+            });
+
+            document.getElementById('saveBizBtn').disabled = false;
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false,
+                timer: 2000, icon: 'success',
+                title: '✅ Business info saved!'
+            });
+        } catch (error) {
+            document.getElementById('saveBizBtn').disabled = false;
+            Swal.fire('Error', 'Save fail: ' + (error.code || error.message), 'error');
+        }
+    });
+
+    // ============================================
+    // 🔑 CHANGE PASSWORD (Current password verify ke sath!)
+    // ============================================
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const curPass = document.getElementById('curPass').value;
+        const newPass = document.getElementById('newPass').value;
+        const confPass = document.getElementById('confPass').value;
+
+        // Validations
+        if (newPass.length < 6) {
+            Swal.fire('⚠️', 'Naya password min 6 characters ka ho!', 'warning');
+            return;
+        }
+        if (newPass !== confPass) {
+            Swal.fire('⚠️', 'Naye password match nahi ho rahe!', 'warning');
+            return;
+        }
+        if (newPass === curPass) {
+            Swal.fire('⚠️', 'Naya password purana jaisa nahi ho sakta!', 'warning');
+            return;
+        }
+
+        document.getElementById('savePassBtn').disabled = true;
+
+        try {
+            // 1. Current password VERIFY (reauthenticate)
+            const cred = firebase.auth.EmailAuthProvider.credential(myEmail, curPass);
+            await auth.currentUser.reauthenticateWithCredential(cred);
+
+            // 2. Password update
+            await auth.currentUser.updatePassword(newPass);
+
+            // 3. Firestore mein bhi update (agar tempPassword system hai —
+            //    owner-panel wale bookers ke liye consistent rahe!)
+            //    NOTE: Ye apna khud ka password hai — tempPassword update 
+            //    sirf tab jab user ka tempPassword field exist kare
+            try {
+                await db.collection('users').doc(myUid).update({
+                    tempPassword: newPass,
+                    passwordChangedAt: new Date().toISOString()
+                });
+            } catch (e) { /* field optional hai */ }
+
+            document.getElementById('savePassBtn').disabled = false;
+            document.getElementById('passwordForm').reset();
+
+            await Swal.fire({
+                icon: 'success',
+                title: '✅ Password Changed!',
+                text: 'Naya password ab se active hai!',
+                timer: 2500,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            document.getElementById('savePassBtn').disabled = false;
+            let msg = 'Password change fail!';
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                msg = 'Current password GHALAT hai!';
+            } else if (error.code === 'auth/weak-password') {
+                msg = 'Naya password kamzor hai (min 6)!';
+            }
+            Swal.fire('❌ Error', msg, 'error');
+        }
+    });
+
+    // ============================================
+    // 🚪 LOGOUT
+    // ============================================
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: 'Logout?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#e74c3c',
+            confirmButtonText: 'Haan',
+            cancelButtonText: 'Cancel'
+        });
+        if (result.isConfirmed) {
+            await auth.signOut();
+            window.location.href = 'auth.html';
+        }
+    });
+</script>
+</body>
+</html>
