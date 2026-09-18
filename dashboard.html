@@ -374,6 +374,17 @@
             }
 
             const data = doc.data();
+                                // 🆕 BLOCKED/DELETED BOOKER GUARD
+            if (data.status === 'blocked') {
+                await auth.signOut();
+                Swal.fire('🚫 Blocked', 'Aap ka account admin ne block kiya hai! Contact karein.', 'error');
+                return;
+            }
+            if (data.status === 'deleted') {
+                await auth.signOut();
+                Swal.fire('🗑️', 'Aap ka account delete ho chuka hai!', 'error');
+                return;
+            }
             const role = data.role;
 
             // Naam — default email prefix
