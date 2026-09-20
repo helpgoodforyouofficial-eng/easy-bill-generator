@@ -600,4 +600,54 @@ async function viewHistory(itemId) {
             const reasonText = mv.reasonLabel || mv.reason || '';
 
             html += `
-            <div style="border:1px solid #eee; border-radius:
+            <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; color:${color};">${qtyStr} ${UNIT_LABELS[item.unit] || ''}</span>
+                    <span style="font-size:11px; color:#95a5a6;">${dateStr}</span>
+                </div>
+                <div style="font-size:12px; color:#555; margin-top:4px;">
+                    ${reasonText}${mv.note ? ' — ' + mv.note : ''}
+                </div>
+                <div style="font-size:11px; color:#95a5a6; margin-top:2px;">
+                    ${mv.beforeQty} → ${mv.afterQty}
+                </div>
+            </div>`;
+        });
+        document.getElementById('historyContent').innerHTML = html;
+
+    } catch (error) {
+        console.error('History error:', error);
+        document.getElementById('historyContent').innerHTML = 
+            '<div class="error-inline">⚠️ History load fail: ' + (error.code || error.message) + '</div>';
+    }
+}
+
+function closeHistoryModal() {
+    document.getElementById('historyModalOverlay').style.display = 'none';
+}
+const historyOverlay = document.getElementById('historyModalOverlay');
+if (historyOverlay) {
+    historyOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeHistoryModal();
+    });
+}
+
+// ============================================
+// 🚪 LOGOUT (guard ke sath)
+// ============================================
+const sbLogout = document.getElementById('logoutBtn');
+if (sbLogout) sbLogout.addEventListener('click', async () => {
+    const result = await Swal.fire({
+        title: 'Logout?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        confirmButtonText: 'Haan',
+        cancelButtonText: 'Cancel'
+    });
+    if (result.isConfirmed) {
+        if (itemsUnsubscribe) itemsUnsubscribe();
+        await auth.signOut();
+        window.location.href = 'auth.html';
+    }
+});
