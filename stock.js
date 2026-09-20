@@ -1,10 +1,10 @@
 // ============================================
-// 📦 EASY BILL GENERATOR — STOCK MANAGER (v2)
+// 📦 EASY BILL GENERATOR — STOCK MANAGER (v3)
 // ✅ Add/Edit/Delete + Search + Filters
-// ✅ 🆕 Stock IN/OUT + Movement History (S1!)
-// ✅ Limits (50 items Free — editable via packages)
-// ✅ Multi-tenant (agencyId isolation)
-// ✅ Self-heal + Guards (top-bar safe)
+// ✅ Stock IN/OUT + Movement History
+// ✅ 🆕 SMART MODALS: Alag options per mode + Sale wording
+// ✅ 🆕 reasonLabel save (har option track — reports ready!)
+// ✅ Limits + Multi-tenant + Self-heal
 // ============================================
 
 // ⚠️ AAP KA CONFIG
@@ -32,6 +32,28 @@ const UNIT_LABELS = {
     'bag': 'Bag', 'box': 'Box', 'carton': 'Carton',
     'bottle': 'Bottle', 'can': 'Can',
     'meter': 'm', 'feet': 'ft'
+};
+
+// ============================================
+// 🆕 SMART REASONS — Alag-alag options per mode!
+// (Har option alag track hoga — reports ke liye!)
+// ============================================
+const STOCK_REASONS = {
+    in: [
+        { value: 'purchase', label: '📥 Purchase (Stock aya)' },
+        { value: 'return', label: '↩️ Customer Return (wapas aya)' },
+        { value: 'correction', label: '✏️ Correction (Ginti theek ki)' },
+        { value: 'other_in', label: '📝 Other (IN)' }
+    ],
+    out: [
+        { value: 'sale', label: '🛒 Sale (bik gaya)' },
+        { value: 'damage', label: '💥 Damage (kharab hua)' },
+        { value: 'expired', label: '⏰ Expired (date khatam)' },
+        { value: 'lost', label: '❓ Lost (ghum ho gaya)' },
+        { value: 'sample', label: '🎁 Sample (dena ho)' },
+        { value: 'correction_out', label: '✏️ Correction (Ginti theek ki)' },
+        { value: 'other_out', label: '📝 Other (OUT)' }
+    ]
 };
 
 // ============================================
@@ -235,7 +257,7 @@ function renderItems() {
             </div>
             <div class="item-actions">
                 <button class="btn-icon btn-in" onclick="openStockModal('${item.id}', 'in')" title="Stock IN">📥</button>
-                <button class="btn-icon btn-out" onclick="openStockModal('${item.id}', 'out')" title="Stock OUT">📤</button>
+                <button class="btn-icon btn-out" onclick="openStockModal('${item.id}', 'out')" title="Stock Sale">📤</button>
                 <button class="btn-icon btn-history" onclick="viewHistory('${item.id}')" title="History">📜</button>
                 <button class="btn-icon btn-edit" onclick="editItem('${item.id}')" title="Edit">✏️</button>
                 <button class="btn-icon btn-del" onclick="deleteItem('${item.id}', '${safeName}')" title="Delete">🗑️</button>
@@ -412,7 +434,7 @@ async function deleteItem(itemId, name) {
 }
 
 // ============================================
-// 🆕📥📤 STOCK IN/OUT MODAL SYSTEM (S1!)
+// 🆕📥📤 SMART STOCK MODAL (v2 — Alag Options + Sale Wording!)
 // ============================================
 function openStockModal(itemId, mode) {
     const item = allItems.find(i => i.id === itemId);
@@ -421,17 +443,36 @@ function openStockModal(itemId, mode) {
     modalItemId = itemId;
     modalMode = mode;
 
-    document.getElementById('stockModalTitle').innerText = mode === 'in' ? '📥 Stock IN' : '📤 Stock OUT';
-    document.getElementById('stockModalItem').innerText = `${item.name} — Current: ${item.qty || 0} ${UNIT_LABELS[item.unit] || ''}`;
+    // 🆕 SMART TITLES (mode ke hisaab se!)
+    document.getElementById('stockModalTitle').innerText = mode === 'in' 
+        ? '📥 Stock IN — Nayi Stock Aayi' 
+        : '🛒 Stock Sale — Stock Nikala';
+    
+    document.getElementById('stockModalItem').innerText = 
+        `${item.name} — Available: ${item.qty || 0} ${UNIT_LABELS[item.unit] || ''}`;
+
     document.getElementById('modalQty').value = '';
     document.getElementById('modalNote').value = '';
 
+    // 🆕 REASONS — sirf apne mode ke options! (IN aur OUT alag!)
     const reasonSel = document.getElementById('modalReason');
-    reasonSel.value = mode === 'in' ? 'purchase' : 'sale';
+    reasonSel.innerHTML = '';
+    STOCK_REASONS[mode].forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.value;
+        opt.textContent = r.label;
+        reasonSel.appendChild(opt);
+    });
 
+    // 🆕 CONFIRM BUTTON — Sale ho to "RECORD SALE" (orange), IN ho to "ADD" (green)!
     const confirmBtn = document.getElementById('modalConfirmBtn');
-    confirmBtn.style.background = mode === 'in' ? '#27ae60' : '#e74c3c';
-    confirmBtn.innerText = mode === 'in' ? '✅ ADD TO STOCK' : '📤 REMOVE FROM STOCK';
+    if (mode === 'in') {
+        confirmBtn.style.background = '#27ae60';
+        confirmBtn.innerText = '✅ ADD TO STOCK';
+    } else {
+        confirmBtn.style.background = '#e67e22';
+        confirmBtn.innerText = '🛒 RECORD SALE';
+    }
 
     document.getElementById('stockModalOverlay').style.display = 'flex';
     document.getElementById('modalQty').focus();
@@ -462,8 +503,12 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
     if (modalMode === 'in') {
         newQty = currentQty + qty;
     } else {
-        newQty = currentQty - qty;  // ✅ MINUS ALLOWED (aap ka faisla!)
+        newQty = currentQty - qty;  // ✅ MINUS ALLOWED (bill ke liye!)
     }
+
+    // 🆕 Reason ka LABEL bhi save (reports ke liye!)
+    const reasonObj = STOCK_REASONS[modalMode].find(r => r.value === reason);
+    const reasonLabel = reasonObj ? reasonObj.label : reason;
 
     try {
         // 1. Stock qty update
@@ -472,13 +517,14 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
             updatedAt: new Date().toISOString()
         });
 
-        // 2. 📜 MOVEMENT LOG
+        // 2. 📜 MOVEMENT LOG (reasonLabel ke sath — har option track!)
         await db.collection('movements').add({
             agencyId: myAgencyId,
             itemId: modalItemId,
             itemName: item.name,
             type: modalMode,
             reason: reason,
+            reasonLabel: reasonLabel,
             qty: qty,
             beforeQty: currentQty,
             afterQty: newQty,
@@ -488,10 +534,16 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
         });
 
         closeStockModal();
+        
+        // 🆕 Smart toast — Sale ho to alag message!
+        const toastTitle = modalMode === 'in' 
+            ? `📥 +${qty} ${UNIT_LABELS[item.unit] || ''} — Total: ${newQty}`
+            : `🛒 Sale: ${qty} ${UNIT_LABELS[item.unit] || ''} — Total: ${newQty}`;
+            
         Swal.fire({
             toast: true, position: 'top-end', showConfirmButton: false,
             timer: 2000, icon: 'success',
-            title: `${modalMode === 'in' ? '📥' : '📤'} ${qty} ${UNIT_LABELS[item.unit] || ''} — Total: ${newQty}`
+            title: toastTitle
         });
 
     } catch (error) {
@@ -520,7 +572,7 @@ async function viewHistory(itemId) {
     document.getElementById('historyModalOverlay').style.display = 'flex';
 
     try {
-        // 🆕 NO orderBy in query — JS mein sort (composite index ki zaroorat nahi!)
+        // NO orderBy in query — JS mein sort (composite index ki zaroorat nahi!)
         const snap = await db.collection('movements')
             .where('agencyId', '==', myAgencyId)
             .where('itemId', '==', itemId)
@@ -536,69 +588,16 @@ async function viewHistory(itemId) {
             return;
         }
 
-        const reasonLabels = {
-            'purchase': '📥 Purchase', 'return': '↩️ Return',
-            'correction': '✏️ Correction', 'sale': '📤 Sale',
-            'damage': '💥 Damage', 'expired': '⏰ Expired', 'other': '📝 Other'
-        };
-
         let html = '';
         movements.slice(0, 50).forEach(mv => {
             const date = new Date(mv.createdAt);
             const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
             const isIn = mv.type === 'in';
             const qtyStr = isIn ? `+${mv.qty}` : `-${mv.qty}`;
-            const color = isIn ? '#27ae60' : '#e74c3c';
+            const color = isIn ? '#27ae60' : '#e67e22';
+
+            // 🆕 reasonLabel pehle, fallback reason value
+            const reasonText = mv.reasonLabel || mv.reason || '';
 
             html += `
-            <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin-bottom:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:bold; color:${color};">${qtyStr} ${UNIT_LABELS[item.unit] || ''}</span>
-                    <span style="font-size:11px; color:#95a5a6;">${dateStr}</span>
-                </div>
-                <div style="font-size:12px; color:#555; margin-top:4px;">
-                    ${reasonLabels[mv.reason] || mv.reason}${mv.note ? ' — ' + mv.note : ''}
-                </div>
-                <div style="font-size:11px; color:#95a5a6; margin-top:2px;">
-                    ${mv.beforeQty} → ${mv.afterQty}
-                </div>
-            </div>`;
-        });
-        document.getElementById('historyContent').innerHTML = html;
-
-    } catch (error) {
-        console.error('History error:', error);
-        document.getElementById('historyContent').innerHTML = 
-            '<div class="error-inline">⚠️ History load fail: ' + (error.code || error.message) + '</div>';
-    }
-}
-
-function closeHistoryModal() {
-    document.getElementById('historyModalOverlay').style.display = 'none';
-}
-const historyOverlay = document.getElementById('historyModalOverlay');
-if (historyOverlay) {
-    historyOverlay.addEventListener('click', function(e) {
-        if (e.target === this) closeHistoryModal();
-    });
-}
-
-// ============================================
-// 🚪 LOGOUT (guard ke sath — top-bar ho ya na ho!)
-// ============================================
-const sbLogout = document.getElementById('logoutBtn');
-if (sbLogout) sbLogout.addEventListener('click', async () => {
-    const result = await Swal.fire({
-        title: 'Logout?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#e74c3c',
-        confirmButtonText: 'Haan',
-        cancelButtonText: 'Cancel'
-    });
-    if (result.isConfirmed) {
-        if (itemsUnsubscribe) itemsUnsubscribe();
-        await auth.signOut();
-        window.location.href = 'auth.html';
-    }
-});
+            <div style="border:1px solid #eee; border-radius:
