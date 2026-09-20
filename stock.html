@@ -162,6 +162,49 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
+<!-- 📥📤 STOCK IN/OUT MODAL -->
+<div id="stockModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; align-items:center; justify-content:center; padding:15px;">
+    <div style="background:#fff; border-radius:16px; padding:25px; width:100%; max-width:380px;">
+        <h3 id="stockModalTitle" style="color:var(--primary); margin-bottom:5px;">📥 Stock IN</h3>
+        <p id="stockModalItem" style="color:#7f8c8d; font-size:13px; margin-bottom:15px;"></p>
+        
+        <div class="form-group">
+            <label>🔢 Quantity *</label>
+            <input type="number" id="modalQty" min="0" step="0.01" placeholder="0" required>
+        </div>
+        <div class="form-group">
+            <label>📝 Reason *</label>
+            <select id="modalReason">
+                <option value="purchase">📥 Purchase (Stock aya)</option>
+                <option value="return">↩️ Customer Return (wapas aya)</option>
+                <option value="correction">✏️ Correction (Ginti theek ki)</option>
+                <option value="sale">📤 Sale (bik gaya)</option>
+                <option value="damage">💥 Damage (kharab hua)</option>
+                <option value="expired">⏰ Expired (date khatam)</option>
+                <option value="other">📝 Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>📝 Note (optional)</label>
+            <input type="text" id="modalNote" maxlength="100" placeholder="Koi note...">
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn" style="flex:1; background:#95a5a6; color:#fff;" onclick="closeStockModal()">Cancel</button>
+            <button class="btn" style="flex:1; background:var(--accent); color:#fff;" id="modalConfirmBtn">✅ Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- 📜 HISTORY MODAL -->
+<div id="historyModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:99999; align-items:center; justify-content:center; padding:15px;">
+    <div style="background:#fff; border-radius:16px; padding:25px; width:100%; max-width:420px; max-height:80vh; overflow-y:auto;">
+        <h3 id="historyTitle" style="color:var(--primary); margin-bottom:15px;">📜 Movement History</h3>
+        <div id="historyContent"></div>
+        <button class="btn" style="width:100%; background:#95a5a6; color:#fff; margin-top:15px;" onclick="closeHistoryModal()">Close</button>
+    </div>
+</div>
+    
     <!-- 🧭 SIDEBAR SYSTEM -->
 <script src="sidebar.js"></script>
 <script src="stock.js"></script>
