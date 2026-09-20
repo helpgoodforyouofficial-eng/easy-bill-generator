@@ -339,3 +339,19 @@ body {
 [dir="rtl"] .search-box input {
     padding: 13px 40px 13px 14px;
 }
+
+/* ============================================
+   🔧 Z-INDEX FIX — SweetAlert hamesha SAB SE UPAR!
+   (Sidebar 99998, Overlay 99997 — Swal us se upar!)
+   ============================================ */
+.swal2-container {
+    z-index: 999999 !important;
+}
+
+/* Modals (IN/OUT + History) bhi SweetAlert ke barabar upar */
+#stockModalOverlay,
+#historyModalOverlay {
+    z-index: 999995 !important;
+}
+
+
