@@ -1,9 +1,10 @@
 // ============================================
-// 📦 EASY BILL GENERATOR — STOCK MANAGER (v1)
+// 📦 EASY BILL GENERATOR — STOCK MANAGER (v2)
 // ✅ Add/Edit/Delete + Search + Filters
+// ✅ 🆕 Stock IN/OUT + Movement History (S1!)
 // ✅ Limits (50 items Free — editable via packages)
 // ✅ Multi-tenant (agencyId isolation)
-// ✅ Self-heal + Guards
+// ✅ Self-heal + Guards (top-bar safe)
 // ============================================
 
 // ⚠️ AAP KA CONFIG
@@ -40,10 +41,12 @@ let myUid = null;
 let myAgencyId = null;
 let myAgency = null;
 let myLimits = { maxItems: 50, monthlyBills: 150 };
-let allItems = [];              // Saare items (memory mein — filtering fast!)
+let allItems = [];
 let currentFilter = 'all';
 let currentSearch = '';
-let editingItemId = null;       // Jo item edit ho raha hai
+let editingItemId = null;
+let modalItemId = null;
+let modalMode = 'in';
 
 // ============================================
 // 🛡️ GUARD + INIT
@@ -70,15 +73,11 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
 
-        // Super admin bhi dekh sakta hai (pehli agency ya demo) — lekin
-        // simple rule: owner ya super-admin, agency zaroori
         myAgencyId = me.agencyId;
         
         if (!myAgencyId) {
-            // Agency nahi — super-admin ho sakta hai (HQ) ya broken user
             if (me.role === 'super-admin') {
-                myAgencyId = 'super-admin-hq'; // apna demo stock
-                // Note: super-admin ka stock super-admin-hq mein jayega
+                myAgencyId = 'super-admin-hq';
             } else {
                 Swal.fire('⚠️', 'Agency link nahi hai! Profile se complete karein.', 'warning')
                     .then(() => window.location.href = 'profile.html');
@@ -86,14 +85,15 @@ auth.onAuthStateChanged(async (user) => {
             }
         }
 
-        // Agency name
+        // Agency name (guard ke sath — top-bar ho ya na ho!)
         try {
             const agDoc = await db.collection('agencies').doc(myAgencyId).get();
             myAgency = agDoc.exists ? agDoc.data() : {};
-            document.getElementById('agencyName').innerText = myAgency.name || 'My Agency';
+            const agNameEl = document.getElementById('agencyName');
+            if (agNameEl) agNameEl.innerText = myAgency.name || 'My Agency';
         } catch (e) {}
 
-        // Limits load (package se — maxItems!)
+        // Limits load
         let pkgId = myAgency.packageId || 'free';
         try {
             const pkgDoc = await db.collection('packages').doc(pkgId).get();
@@ -102,9 +102,9 @@ auth.onAuthStateChanged(async (user) => {
             }
         } catch (e) {}
         
-        // maxItems package mein nahi? Default 50
         if (!myLimits.maxItems) myLimits.maxItems = 50;
-        document.getElementById('itemLimit').innerText = myLimits.maxItems;
+        const limEl = document.getElementById('itemLimit');
+        if (limEl) limEl.innerText = myLimits.maxItems;
 
         // Items load + real-time listener!
         listenItems();
@@ -116,7 +116,7 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================
-// 🔄 REAL-TIME ITEMS LISTENER (Live updates!)
+// 🔄 REAL-TIME ITEMS LISTENER
 // ============================================
 let itemsUnsubscribe = null;
 function listenItems() {
@@ -129,7 +129,6 @@ function listenItems() {
             snap.forEach(d => {
                 allItems.push({ id: d.id, ...d.data() });
             });
-            // Name se sort (A-Z)
             allItems.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             renderStats();
             renderItems();
@@ -162,19 +161,17 @@ function renderStats() {
 }
 
 // ============================================
-// 📋 ITEMS RENDER (Search + Filter apply!)
+// 📋 ITEMS RENDER (5 BUTTONS — IN/OUT/History/Edit/Delete!)
 // ============================================
 function renderItems() {
     const container = document.getElementById('itemsList');
-    document.getElementById('itemCount').innerText = allItems.length;
+    const countEl = document.getElementById('itemCount');
+    if (countEl) countEl.innerText = allItems.length;
 
-    // Filter + Search apply
     let filtered = allItems.filter(item => {
-        // Search
         if (currentSearch && !(item.name || '').toLowerCase().includes(currentSearch)) {
             return false;
         }
-        // Filter chips
         const qty = item.qty || 0;
         const limit = item.lowStockLimit !== undefined && item.lowStockLimit !== ''
             ? parseFloat(item.lowStockLimit) : 10;
@@ -182,10 +179,9 @@ function renderItems() {
         if (currentFilter === 'low') return qty > 0 && qty <= limit;
         if (currentFilter === 'out') return qty <= 0;
         if (currentFilter === 'instock') return qty > limit;
-        return true; // all
+        return true;
     });
 
-    // Empty states
     if (allItems.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -205,7 +201,6 @@ function renderItems() {
         return;
     }
 
-    // Render cards
     let html = '';
     filtered.forEach(item => {
         const qty = item.qty || 0;
@@ -213,7 +208,6 @@ function renderItems() {
             ? parseFloat(item.lowStockLimit) : 10;
         const unit = UNIT_LABELS[item.unit] || item.unit || '';
 
-        // Status
         let statusClass = '';
         let badge = '';
         if (qty <= 0) {
@@ -226,6 +220,9 @@ function renderItems() {
             badge = '<span class="item-badge badge-ok">✅ In Stock</span>';
         }
 
+        // Safe name for onclick (quotes escape)
+        const safeName = (item.name || '').replace(/'/g, '').replace(/"/g, '');
+
         html += `
         <div class="item-card ${statusClass}">
             <div class="item-info">
@@ -237,8 +234,11 @@ function renderItems() {
                 ${badge}
             </div>
             <div class="item-actions">
+                <button class="btn-icon btn-in" onclick="openStockModal('${item.id}', 'in')" title="Stock IN">📥</button>
+                <button class="btn-icon btn-out" onclick="openStockModal('${item.id}', 'out')" title="Stock OUT">📤</button>
+                <button class="btn-icon btn-history" onclick="viewHistory('${item.id}')" title="History">📜</button>
                 <button class="btn-icon btn-edit" onclick="editItem('${item.id}')" title="Edit">✏️</button>
-                <button class="btn-icon btn-del" onclick="deleteItem('${item.id}', '${(item.name || '').replace(/'/g, '')}')" title="Delete">🗑️</button>
+                <button class="btn-icon btn-del" onclick="deleteItem('${item.id}', '${safeName}')" title="Delete">🗑️</button>
             </div>
         </div>`;
     });
@@ -283,10 +283,9 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
     const purchase = parseFloat(document.getElementById('itemPurchase').value) || 0;
     const limit = document.getElementById('itemLimit').value;
 
-    // Validations
     if (!name) { Swal.fire('⚠️', 'Item ka naam lazmi hai!', 'warning'); return; }
 
-    // 🔒 LIMIT CHECK (sirf NAYE items par — edit par nahi!)
+    // 🔒 LIMIT CHECK (sirf NAYE items par)
     if (!editingItemId) {
         if (allItems.length >= myLimits.maxItems) {
             Swal.fire({
@@ -299,7 +298,6 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
             return;
         }
 
-        // Duplicate name check (same agency mein)
         const dup = allItems.find(i => (i.name || '').toLowerCase() === name.toLowerCase());
         if (dup) {
             Swal.fire({
@@ -327,7 +325,6 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
         };
 
         if (editingItemId) {
-            // ✏️ EDIT — sirf fields update
             await db.collection('stock').doc(editingItemId).update(itemData);
             Swal.fire({
                 toast: true, position: 'top-end', showConfirmButton: false,
@@ -335,7 +332,6 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
                 title: '✅ Item updated!'
             });
         } else {
-            // ➕ ADD — createdAt bhi
             itemData.createdAt = new Date().toISOString();
             itemData.createdBy = myUid;
             await db.collection('stock').add(itemData);
@@ -346,14 +342,14 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
             });
         }
 
-        // Reset form
         document.getElementById('addItemForm').reset();
         document.getElementById('itemLimit').value = '';
         editingItemId = null;
-        document.querySelector('[data-i18n], #addItemForm').closest('.panel-card')
-            .querySelector('.add-item-header h2').innerHTML = '<i class="fas fa-plus-circle"></i> Add New Item';
+        const headerH2 = document.querySelector('.add-item-header h2');
+        if (headerH2) headerH2.innerHTML = '<i class="fas fa-plus-circle"></i> Add New Item';
         document.getElementById('addItemForm').style.display = 'none';
-        document.getElementById('toggleArrow').classList.remove('open');
+        const arrow = document.getElementById('toggleArrow');
+        if (arrow) arrow.classList.remove('open');
 
     } catch (error) {
         document.getElementById('saveItemBtn').disabled = false;
@@ -363,7 +359,7 @@ document.getElementById('addItemForm').addEventListener('submit', async (e) => {
 });
 
 // ============================================
-// ✏️ EDIT ITEM (Form mein bharo!)
+// ✏️ EDIT ITEM
 // ============================================
 function editItem(itemId) {
     const item = allItems.find(i => i.id === itemId);
@@ -371,7 +367,6 @@ function editItem(itemId) {
 
     editingItemId = itemId;
 
-    // Form bharo
     document.getElementById('itemName').value = item.name || '';
     document.getElementById('itemUnit').value = item.unit || 'unit';
     document.getElementById('itemQty').value = item.qty || 0;
@@ -379,17 +374,17 @@ function editItem(itemId) {
     document.getElementById('itemPurchase').value = item.purchaseRate || '';
     document.getElementById('itemLimit').value = item.lowStockLimit !== undefined ? item.lowStockLimit : '';
 
-    // Form kholo + title badlo
     document.getElementById('addItemForm').style.display = 'block';
-    document.getElementById('toggleArrow').classList.add('open');
-    document.querySelector('.add-item-header h2').innerHTML = '<i class="fas fa-edit"></i> Edit Item: ' + (item.name || '');
+    const arrow = document.getElementById('toggleArrow');
+    if (arrow) arrow.classList.add('open');
+    const headerH2 = document.querySelector('.add-item-header h2');
+    if (headerH2) headerH2.innerHTML = '<i class="fas fa-edit"></i> Edit Item: ' + (item.name || '');
     
-    // Scroll to form
     document.getElementById('addItemForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ============================================
-// 🗑️ DELETE ITEM (Double confirm!)
+// 🗑️ DELETE ITEM
 // ============================================
 async function deleteItem(itemId, name) {
     const result = await Swal.fire({
@@ -411,16 +406,188 @@ async function deleteItem(itemId, name) {
             timer: 1800, icon: 'success',
             title: '🗑️ Item deleted!'
         });
-        // Listener khud refresh kar dega!
     } catch (e) {
         Swal.fire('Error', 'Delete fail: ' + e.code, 'error');
     }
 }
 
 // ============================================
-// 🚪 LOGOUT
+// 🆕📥📤 STOCK IN/OUT MODAL SYSTEM (S1!)
 // ============================================
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+function openStockModal(itemId, mode) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    modalItemId = itemId;
+    modalMode = mode;
+
+    document.getElementById('stockModalTitle').innerText = mode === 'in' ? '📥 Stock IN' : '📤 Stock OUT';
+    document.getElementById('stockModalItem').innerText = `${item.name} — Current: ${item.qty || 0} ${UNIT_LABELS[item.unit] || ''}`;
+    document.getElementById('modalQty').value = '';
+    document.getElementById('modalNote').value = '';
+
+    const reasonSel = document.getElementById('modalReason');
+    reasonSel.value = mode === 'in' ? 'purchase' : 'sale';
+
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    confirmBtn.style.background = mode === 'in' ? '#27ae60' : '#e74c3c';
+    confirmBtn.innerText = mode === 'in' ? '✅ ADD TO STOCK' : '📤 REMOVE FROM STOCK';
+
+    document.getElementById('stockModalOverlay').style.display = 'flex';
+    document.getElementById('modalQty').focus();
+}
+
+function closeStockModal() {
+    document.getElementById('stockModalOverlay').style.display = 'none';
+    modalItemId = null;
+}
+
+document.getElementById('modalConfirmBtn').addEventListener('click', async () => {
+    if (!modalItemId) return;
+
+    const qty = parseFloat(document.getElementById('modalQty').value) || 0;
+    const reason = document.getElementById('modalReason').value;
+    const note = document.getElementById('modalNote').value.trim();
+
+    if (qty <= 0) {
+        Swal.fire('⚠️', 'Quantity 0 se zyada honi chahiye!', 'warning');
+        return;
+    }
+
+    const item = allItems.find(i => i.id === modalItemId);
+    if (!item) return;
+
+    const currentQty = item.qty || 0;
+    let newQty;
+    if (modalMode === 'in') {
+        newQty = currentQty + qty;
+    } else {
+        newQty = currentQty - qty;  // ✅ MINUS ALLOWED (aap ka faisla!)
+    }
+
+    try {
+        // 1. Stock qty update
+        await db.collection('stock').doc(modalItemId).update({
+            qty: newQty,
+            updatedAt: new Date().toISOString()
+        });
+
+        // 2. 📜 MOVEMENT LOG
+        await db.collection('movements').add({
+            agencyId: myAgencyId,
+            itemId: modalItemId,
+            itemName: item.name,
+            type: modalMode,
+            reason: reason,
+            qty: qty,
+            beforeQty: currentQty,
+            afterQty: newQty,
+            note: note,
+            createdBy: myUid,
+            createdAt: new Date().toISOString()
+        });
+
+        closeStockModal();
+        Swal.fire({
+            toast: true, position: 'top-end', showConfirmButton: false,
+            timer: 2000, icon: 'success',
+            title: `${modalMode === 'in' ? '📥' : '📤'} ${qty} ${UNIT_LABELS[item.unit] || ''} — Total: ${newQty}`
+        });
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire('❌ Error', 'Stock update fail: ' + (error.code || error.message), 'error');
+    }
+});
+
+// Overlay click → close
+const stockOverlay = document.getElementById('stockModalOverlay');
+if (stockOverlay) {
+    stockOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeStockModal();
+    });
+}
+
+// ============================================
+// 📜 MOVEMENT HISTORY (JS sort — no index needed!)
+// ============================================
+async function viewHistory(itemId) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) return;
+
+    document.getElementById('historyTitle').innerText = `📜 History: ${item.name}`;
+    document.getElementById('historyContent').innerHTML = '<div class="loading-inline">Loading...</div>';
+    document.getElementById('historyModalOverlay').style.display = 'flex';
+
+    try {
+        // 🆕 NO orderBy in query — JS mein sort (composite index ki zaroorat nahi!)
+        const snap = await db.collection('movements')
+            .where('agencyId', '==', myAgencyId)
+            .where('itemId', '==', itemId)
+            .get();
+
+        const movements = [];
+        snap.forEach(d => movements.push(d.data()));
+        movements.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (movements.length === 0) {
+            document.getElementById('historyContent').innerHTML = 
+                '<div class="empty-state">Abhi koi movement nahi!</div>';
+            return;
+        }
+
+        const reasonLabels = {
+            'purchase': '📥 Purchase', 'return': '↩️ Return',
+            'correction': '✏️ Correction', 'sale': '📤 Sale',
+            'damage': '💥 Damage', 'expired': '⏰ Expired', 'other': '📝 Other'
+        };
+
+        let html = '';
+        movements.slice(0, 50).forEach(mv => {
+            const date = new Date(mv.createdAt);
+            const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            const isIn = mv.type === 'in';
+            const qtyStr = isIn ? `+${mv.qty}` : `-${mv.qty}`;
+            const color = isIn ? '#27ae60' : '#e74c3c';
+
+            html += `
+            <div style="border:1px solid #eee; border-radius:10px; padding:10px; margin-bottom:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:bold; color:${color};">${qtyStr} ${UNIT_LABELS[item.unit] || ''}</span>
+                    <span style="font-size:11px; color:#95a5a6;">${dateStr}</span>
+                </div>
+                <div style="font-size:12px; color:#555; margin-top:4px;">
+                    ${reasonLabels[mv.reason] || mv.reason}${mv.note ? ' — ' + mv.note : ''}
+                </div>
+                <div style="font-size:11px; color:#95a5a6; margin-top:2px;">
+                    ${mv.beforeQty} → ${mv.afterQty}
+                </div>
+            </div>`;
+        });
+        document.getElementById('historyContent').innerHTML = html;
+
+    } catch (error) {
+        console.error('History error:', error);
+        document.getElementById('historyContent').innerHTML = 
+            '<div class="error-inline">⚠️ History load fail: ' + (error.code || error.message) + '</div>';
+    }
+}
+
+function closeHistoryModal() {
+    document.getElementById('historyModalOverlay').style.display = 'none';
+}
+const historyOverlay = document.getElementById('historyModalOverlay');
+if (historyOverlay) {
+    historyOverlay.addEventListener('click', function(e) {
+        if (e.target === this) closeHistoryModal();
+    });
+}
+
+// ============================================
+// 🚪 LOGOUT (guard ke sath — top-bar ho ya na ho!)
+// ============================================
+const sbLogout = document.getElementById('logoutBtn');
+if (sbLogout) sbLogout.addEventListener('click', async () => {
     const result = await Swal.fire({
         title: 'Logout?',
         icon: 'question',
