@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — Customers</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Customers CSS -->
+    <link rel="stylesheet" href="customers.css">
+
+    <!-- 🆕 Z-INDEX FIX -->
+    <style>
+        .swal2-container { z-index: 999999 !important; }
+    </style>
+</head>
+<body>
+
+<div class="panel-container">
+
+    <!-- ===== 📊 STATS CARDS ===== -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#3498db;">👥</div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Customers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e74c3c;">💰</div>
+            <div class="stat-value" id="statBalance">0</div>
+            <div class="stat-label">Total Balance</div>
+        </div>
+    </div>
+
+    <!-- ===== 🔍 SEARCH (Sticky) ===== -->
+    <div class="search-filter-bar">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Customer ka naam ya mobile likhein...">
+        </div>
+    </div>
+
+    <!-- ===== ➕ ADD CUSTOMER (Collapsible) ===== -->
+    <div class="panel-card">
+        <div class="add-item-header" id="addCustomerToggle">
+            <h2><i class="fas fa-user-plus"></i> Add New Customer</h2>
+            <i class="fas fa-chevron-down toggle-arrow" id="toggleArrow"></i>
+        </div>
+        <form id="addCustomerForm" class="panel-form" style="display:none;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>👤 Customer Name *</label>
+                    <input type="text" id="custName" placeholder="e.g. Ali Ahmed" required maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>📱 Mobile (optional)</label>
+                    <input type="tel" id="custMobile" maxlength="15" placeholder="03xx-xxxxxxx">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📍 Address (optional)</label>
+                <input type="text" id="custAddress" maxlength="100" placeholder="Street, Area, City">
+            </div>
+            <button type="submit" class="btn btn-primary" id="saveCustomerBtn">
+                <i class="fas fa-save"></i> SAVE CUSTOMER
+            </button>
+        </form>
+    </div>
+
+    <!-- ===== 👥 CUSTOMERS LIST ===== -->
+    <div class="panel-card">
+        <div class="card-header">
+            <h2><i class="fas fa-users"></i> Customers (<span id="custCount">0</span>/<span id="custLimit">50</span>)</h2>
+        </div>
+        <div id="customersList">
+            <div class="loading-inline">Loading customers...</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- 🧭 SIDEBAR SYSTEM -->
+<script src="sidebar.js"></script>
+<script src="customers.js"></script>
+</body>
+</html>
