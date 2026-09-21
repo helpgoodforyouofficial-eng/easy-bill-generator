@@ -1,6 +1,9 @@
 // ============================================
-// 👥 EASY BILL GENERATOR — CUSTOMERS MODULE (v1)
+// 👥 EASY BILL GENERATOR — CUSTOMERS MODULE (v2)
 // ✅ Add/Edit/Delete + Search
+// ✅ 🆕 Route field (order booker routes ke liye!)
+// ✅ 🆕 Previous Balance (shift wale ki purani pending!)
+// ✅ 🆕 Smart Duplicate (naam+mobile combo — alag mobile = allowed!)
 // ✅ Balance tracking (bills se update — Phase 4!)
 // ✅ Limits (50 customers Free)
 // ✅ Multi-tenant (agencyId)
@@ -123,7 +126,7 @@ function renderStats() {
 }
 
 // ============================================
-// 📋 CUSTOMERS RENDER
+// 📋 CUSTOMERS RENDER (Route bhi dikhega!)
 // ============================================
 function renderCustomers() {
     const container = document.getElementById('customersList');
@@ -134,7 +137,9 @@ function renderCustomers() {
         if (!currentSearch) return true;
         const name = (c.name || '').toLowerCase();
         const mobile = (c.mobile || '');
-        return name.includes(currentSearch) || mobile.includes(currentSearch);
+        const route = (c.route || '').toLowerCase();
+        // 🆕 Search: naam + mobile + ROUTE teeno mein!
+        return name.includes(currentSearch) || mobile.includes(currentSearch) || route.includes(currentSearch);
     });
 
     if (allCustomers.length === 0) {
@@ -161,7 +166,6 @@ function renderCustomers() {
         const bal = c.balance || 0;
         const safeName = (c.name || '').replace(/'/g, '').replace(/"/g, '');
 
-        // Balance badge
         const balHtml = bal > 0
             ? `<span class="customer-balance bal-due">💰 Balance: Rs ${bal.toLocaleString()}</span>`
             : `<span class="customer-balance bal-zero">✅ No Balance</span>`;
@@ -173,6 +177,7 @@ function renderCustomers() {
                 <div class="customer-details">
                     ${c.mobile ? `<span>📱 ${c.mobile}</span>` : ''}
                     ${c.address ? `<span>📍 ${c.address}</span>` : ''}
+                    ${c.route ? `<span>🛣️ ${c.route}</span>` : ''}
                 </div>
                 ${balHtml}
             </div>
@@ -186,7 +191,7 @@ function renderCustomers() {
 }
 
 // ============================================
-// 🔍 SEARCH EVENT
+// 🔍 SEARCH EVENT (naam + mobile + route!)
 // ============================================
 document.getElementById('searchInput').addEventListener('input', function() {
     currentSearch = this.value.toLowerCase().trim();
@@ -210,6 +215,8 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
     const name = document.getElementById('custName').value.trim();
     const mobile = document.getElementById('custMobile').value.trim();
     const address = document.getElementById('custAddress').value.trim();
+    const route = document.getElementById('custRoute').value.trim();
+    const prevBalance = parseFloat(document.getElementById('custPrevBalance').value) || 0;
 
     if (!name) { Swal.fire('⚠️', 'Customer ka naam lazmi hai!', 'warning'); return; }
 
@@ -226,13 +233,18 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
             return;
         }
 
-        // Duplicate check (same naam — same agency)
-        const dup = allCustomers.find(c => (c.name || '').toLowerCase() === name.toLowerCase());
+        // 🆕 SMART DUPLICATE: Naam + Mobile DONO same = Duplicate
+        // (Naam same, mobile alag = ALLOWED — do alag log ho sakte hain!)
+        const dup = allCustomers.find(c => 
+            (c.name || '').toLowerCase() === name.toLowerCase() &&
+            (c.mobile || '') === mobile
+        );
         if (dup) {
             Swal.fire({
                 icon: 'warning',
                 title: '⚠️ Duplicate Customer!',
-                text: `"${name}" pehle se saved hai!`,
+                html: `"${name}" (${mobile || 'bina mobile'}) pehle se saved hai!<br>
+                       <small>Agar alag customer hai to Mobile Number alag dalein.</small>`,
                 confirmButtonText: 'OK'
             });
             return;
@@ -246,6 +258,8 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
             name: name,
             mobile: mobile,
             address: address,
+            route: route,                      // 🆕
+            previousBalance: prevBalance,      // 🆕
             agencyId: myAgencyId,
             updatedAt: new Date().toISOString()
         };
@@ -258,14 +272,17 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
                 title: '✅ Customer updated!'
             });
         } else {
-            custData.balance = 0;  // 🆕 Balance tracking (Phase 4 se bills update karenge!)
+            // 🆕 Balance = Previous Balance se start!
+            custData.balance = prevBalance;
             custData.createdAt = new Date().toISOString();
             custData.createdBy = myUid;
             await db.collection('customers').add(custData);
             Swal.fire({
                 toast: true, position: 'top-end', showConfirmButton: false,
                 timer: 1800, icon: 'success',
-                title: '✅ Customer added!'
+                title: prevBalance > 0 
+                    ? `✅ Customer added! Balance: Rs ${prevBalance.toLocaleString()}` 
+                    : '✅ Customer added!'
             });
         }
 
@@ -285,7 +302,7 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
 });
 
 // ============================================
-// ✏️ EDIT CUSTOMER
+// ✏️ EDIT CUSTOMER (naye fields ke sath!)
 // ============================================
 function editCustomer(custId) {
     const c = allCustomers.find(x => x.id === custId);
@@ -296,6 +313,8 @@ function editCustomer(custId) {
     document.getElementById('custName').value = c.name || '';
     document.getElementById('custMobile').value = c.mobile || '';
     document.getElementById('custAddress').value = c.address || '';
+    document.getElementById('custRoute').value = c.route || '';
+    document.getElementById('custPrevBalance').value = c.previousBalance || '';
 
     document.getElementById('addCustomerForm').style.display = 'block';
     const arrow = document.getElementById('toggleArrow');
