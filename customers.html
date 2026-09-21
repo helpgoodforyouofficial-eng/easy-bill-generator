@@ -54,31 +54,79 @@
             <h2><i class="fas fa-user-plus"></i> Add New Customer</h2>
             <i class="fas fa-chevron-down toggle-arrow" id="toggleArrow"></i>
         </div>
-        <form id="addCustomerForm" class="panel-form" style="display:none;">
+                <form id="addCustomerForm" class="panel-form" style="display:none;">
+            
+            <!-- 🏪 BUSINESS INFO -->
             <div class="form-row">
                 <div class="form-group">
                     <label>👤 Customer Name *</label>
-                    <input type="text" id="custName" placeholder="e.g. Ali Ahmed" required maxlength="50">
+                    <input type="text" id="custName" placeholder="e.g. Imtiaz Ali" required maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>🏪 Shop Name (optional)</label>
+                    <input type="text" id="custShopName" placeholder="e.g. Al-Madina Store" maxlength="50">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🏷️ Customer Type (optional)</label>
+                    <select id="custType" class="select-input">
+                        <option value="">— Select —</option>
+                        <option value="retail">🛒 Retail</option>
+                        <option value="wholesale">📦 Wholesale</option>
+                        <option value="special">⭐ Special</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>📱 Mobile (optional)</label>
                     <input type="tel" id="custMobile" maxlength="15" placeholder="03xx-xxxxxxx">
                 </div>
             </div>
-                        <div class="form-row">
+
+            <!-- 📍 LOCATION + ROUTE -->
+            <div class="form-row">
                 <div class="form-group">
                     <label>📍 Address (optional)</label>
-                    <input type="text" id="custAddress" maxlength="100" placeholder="Street, Area, City">
+                    <input type="text" id="custAddress" maxlength="100" placeholder="Street, Area">
                 </div>
                 <div class="form-group">
                     <label>🛣️ Route (optional)</label>
                     <input type="text" id="custRoute" maxlength="50" placeholder="e.g. Main Bazar, Gali 6">
                 </div>
             </div>
-            <div class="form-group">
-                <label>💰 Previous Balance (optional — purani pending)</label>
-                <input type="number" id="custPrevBalance" min="0" step="0.01" placeholder="0">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>🏙️ City (optional)</label>
+                    <input type="text" id="custCity" maxlength="30" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label>📅 Payment Terms (optional)</label>
+                    <select id="custTerms" class="select-input">
+                        <option value="">— Select —</option>
+                        <option value="cash">💵 Cash</option>
+                        <option value="7">📅 7 Days</option>
+                        <option value="15">📅 15 Days</option>
+                        <option value="30">📅 30 Days</option>
+                    </select>
+                </div>
             </div>
+
+            <!-- 💰 FINANCE -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💰 Previous Balance (optional — purani pending)</label>
+                    <input type="number" id="custPrevBalance" min="0" step="0.01" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>💳 Credit Limit (optional — max udhaar)</label>
+                    <input type="number" id="custCreditLimit" min="0" step="0.01" placeholder="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📝 Notes (optional)</label>
+                <input type="text" id="custNotes" maxlength="150" placeholder="Koi khas baat...">
+            </div>
+
             <button type="submit" class="btn btn-primary" id="saveCustomerBtn">
                 <i class="fas fa-save"></i> SAVE CUSTOMER
             </button>
