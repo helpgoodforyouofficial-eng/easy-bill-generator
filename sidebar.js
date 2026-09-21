@@ -24,6 +24,7 @@
             title: 'MANAGEMENT',
             items: [
                 { icon: 'fa-boxes-stacked', text: 'Stock Manager', url: 'stock.html', roles: ['super-admin', 'owner'] },
+                { icon: 'fa-user-friends', text: 'Customers', url: 'customers.html', roles: ['super-admin', 'owner'] },
                 { icon: 'fa-users', text: 'Order Bookers', url: 'owner.html', roles: ['owner'] },
                 { icon: 'fa-building', text: 'Agencies', url: 'admin.html', roles: ['super-admin'] },
             ]
