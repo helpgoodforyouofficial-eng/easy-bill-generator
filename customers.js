@@ -1,9 +1,9 @@
 // ============================================
-// 👥 EASY BILL GENERATOR — CUSTOMERS MODULE (v2)
-// ✅ Add/Edit/Delete + Search
-// ✅ 🆕 Route field (order booker routes ke liye!)
-// ✅ 🆕 Previous Balance (shift wale ki purani pending!)
-// ✅ 🆕 Smart Duplicate (naam+mobile combo — alag mobile = allowed!)
+// 👥 EASY BILL GENERATOR — CUSTOMERS MODULE (v3)
+// ✅ Add/Edit/Delete + Smart Search (naam/mobile/route/city/shop!)
+// ✅ 🆕 Shop Name, City, Customer Type, Credit Limit, Terms, Notes
+// ✅ 🆕 Smart Duplicate (naam+mobile combo)
+// ✅ Previous Balance + Route
 // ✅ Balance tracking (bills se update — Phase 4!)
 // ✅ Limits (50 customers Free)
 // ✅ Multi-tenant (agencyId)
@@ -29,6 +29,21 @@ let myLimits = { maxCustomers: 50 };
 let allCustomers = [];
 let currentSearch = '';
 let editingCustomerId = null;
+
+// ============================================
+// 🏷️ LABELS (display ke liye)
+// ============================================
+const CUST_TYPE_LABELS = {
+    'retail': '🛒 Retail',
+    'wholesale': '📦 Wholesale',
+    'special': '⭐ Special'
+};
+const TERMS_LABELS = {
+    'cash': '💵 Cash',
+    '7': '📅 7 Days',
+    '15': '📅 15 Days',
+    '30': '📅 30 Days'
+};
 
 // ============================================
 // 🛡️ GUARD + INIT
@@ -126,20 +141,26 @@ function renderStats() {
 }
 
 // ============================================
-// 📋 CUSTOMERS RENDER (Route bhi dikhega!)
+// 📋 CUSTOMERS RENDER (naye fields ke sath!)
 // ============================================
 function renderCustomers() {
     const container = document.getElementById('customersList');
     const countEl = document.getElementById('custCount');
     if (countEl) countEl.innerText = allCustomers.length;
 
+    // 🆕 SMART SEARCH: naam, mobile, route, city, shop name!
     let filtered = allCustomers.filter(c => {
         if (!currentSearch) return true;
         const name = (c.name || '').toLowerCase();
         const mobile = (c.mobile || '');
         const route = (c.route || '').toLowerCase();
-        // 🆕 Search: naam + mobile + ROUTE teeno mein!
-        return name.includes(currentSearch) || mobile.includes(currentSearch) || route.includes(currentSearch);
+        const city = (c.city || '').toLowerCase();
+        const shop = (c.shopName || '').toLowerCase();
+        return name.includes(currentSearch) || 
+               mobile.includes(currentSearch) || 
+               route.includes(currentSearch) ||
+               city.includes(currentSearch) ||
+               shop.includes(currentSearch);
     });
 
     if (allCustomers.length === 0) {
@@ -170,14 +191,25 @@ function renderCustomers() {
             ? `<span class="customer-balance bal-due">💰 Balance: Rs ${bal.toLocaleString()}</span>`
             : `<span class="customer-balance bal-zero">✅ No Balance</span>`;
 
+        // 🆕 Type badge
+        const typeHtml = c.customerType 
+            ? `<span class="cust-type-tag">${CUST_TYPE_LABELS[c.customerType] || c.customerType}</span>`
+            : '';
+
         html += `
         <div class="customer-card ${bal > 0 ? 'has-balance' : ''}">
             <div class="customer-info">
-                <div class="customer-name">👤 ${c.name || 'Unnamed'}</div>
+                <div class="customer-name">👤 ${c.name || 'Unnamed'} ${typeHtml}</div>
                 <div class="customer-details">
+                    ${c.shopName ? `<span>🏪 ${c.shopName}</span>` : ''}
                     ${c.mobile ? `<span>📱 ${c.mobile}</span>` : ''}
                     ${c.address ? `<span>📍 ${c.address}</span>` : ''}
                     ${c.route ? `<span>🛣️ ${c.route}</span>` : ''}
+                    ${c.city ? `<span>🏙️ ${c.city}</span>` : ''}
+                </div>
+                <div class="customer-details">
+                    ${c.paymentTerms ? `<span>📅 ${TERMS_LABELS[c.paymentTerms] || c.paymentTerms}</span>` : ''}
+                    ${c.creditLimit ? `<span>💳 Credit Limit: Rs ${Number(c.creditLimit).toLocaleString()}</span>` : ''}
                 </div>
                 ${balHtml}
             </div>
@@ -191,7 +223,7 @@ function renderCustomers() {
 }
 
 // ============================================
-// 🔍 SEARCH EVENT (naam + mobile + route!)
+// 🔍 SEARCH EVENT
 // ============================================
 document.getElementById('searchInput').addEventListener('input', function() {
     currentSearch = this.value.toLowerCase().trim();
@@ -212,11 +244,18 @@ document.getElementById('addCustomerToggle').addEventListener('click', function(
 document.getElementById('addCustomerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
+    // 🆕 SAARI FIELDS collect
     const name = document.getElementById('custName').value.trim();
+    const shopName = document.getElementById('custShopName').value.trim();
+    const customerType = document.getElementById('custType').value;
     const mobile = document.getElementById('custMobile').value.trim();
     const address = document.getElementById('custAddress').value.trim();
     const route = document.getElementById('custRoute').value.trim();
+    const city = document.getElementById('custCity').value.trim();
+    const paymentTerms = document.getElementById('custTerms').value;
     const prevBalance = parseFloat(document.getElementById('custPrevBalance').value) || 0;
+    const creditLimit = parseFloat(document.getElementById('custCreditLimit').value) || 0;
+    const notes = document.getElementById('custNotes').value.trim();
 
     if (!name) { Swal.fire('⚠️', 'Customer ka naam lazmi hai!', 'warning'); return; }
 
@@ -233,8 +272,7 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
             return;
         }
 
-        // 🆕 SMART DUPLICATE: Naam + Mobile DONO same = Duplicate
-        // (Naam same, mobile alag = ALLOWED — do alag log ho sakte hain!)
+        // 🆕 SMART DUPLICATE: Naam + Mobile dono same = Duplicate
         const dup = allCustomers.find(c => 
             (c.name || '').toLowerCase() === name.toLowerCase() &&
             (c.mobile || '') === mobile
@@ -256,10 +294,16 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
     try {
         const custData = {
             name: name,
+            shopName: shopName,              // 🆕
+            customerType: customerType,      // 🆕
             mobile: mobile,
             address: address,
-            route: route,                      // 🆕
-            previousBalance: prevBalance,      // 🆕
+            route: route,
+            city: city,                      // 🆕
+            paymentTerms: paymentTerms,      // 🆕
+            creditLimit: creditLimit,        // 🆕
+            notes: notes,                    // 🆕
+            previousBalance: prevBalance,
             agencyId: myAgencyId,
             updatedAt: new Date().toISOString()
         };
@@ -302,7 +346,7 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
 });
 
 // ============================================
-// ✏️ EDIT CUSTOMER (naye fields ke sath!)
+// ✏️ EDIT CUSTOMER (saare fields!)
 // ============================================
 function editCustomer(custId) {
     const c = allCustomers.find(x => x.id === custId);
@@ -311,10 +355,16 @@ function editCustomer(custId) {
     editingCustomerId = custId;
 
     document.getElementById('custName').value = c.name || '';
+    document.getElementById('custShopName').value = c.shopName || '';
+    document.getElementById('custType').value = c.customerType || '';
     document.getElementById('custMobile').value = c.mobile || '';
     document.getElementById('custAddress').value = c.address || '';
     document.getElementById('custRoute').value = c.route || '';
+    document.getElementById('custCity').value = c.city || '';
+    document.getElementById('custTerms').value = c.paymentTerms || '';
     document.getElementById('custPrevBalance').value = c.previousBalance || '';
+    document.getElementById('custCreditLimit').value = c.creditLimit || '';
+    document.getElementById('custNotes').value = c.notes || '';
 
     document.getElementById('addCustomerForm').style.display = 'block';
     const arrow = document.getElementById('toggleArrow');
