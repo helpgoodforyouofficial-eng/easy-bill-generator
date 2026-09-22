@@ -16,8 +16,8 @@
             title: 'MAIN',
             items: [
                 { icon: 'fa-chart-line', text: 'Dashboard', url: 'dashboard.html', roles: ['super-admin', 'owner', 'booker'] },
-                { icon: 'fa-bolt', text: 'Instant Bills', url: '#', roles: ['super-admin', 'owner'], phase: 'PHASE 4' },
-                { icon: 'fa-boxes-stacked', text: 'Bill from Stock', url: '#', roles: ['super-admin', 'owner'], phase: 'PHASE 4' },
+                { icon: 'fa-bolt', text: 'Instant Bills', url: 'bills.html', roles: ['super-admin', 'owner'] },
+{ icon: 'fa-boxes-stacked', text: 'Bill from Stock', url: 'bills.html?mode=stock', roles: ['super-admin', 'owner'] },
             ]
         },
         {
