@@ -83,7 +83,7 @@
                 <div class="form-group">
                     <label>💳 Package *</label>
                     <select id="agPackage" required>
-                        <option value="free" selected>🆓 FREE (150 bills/mo)</option>
+                        <option value="free" selected>🆓 FREE (150 bills/mo, 50 items)</option>
                         <option value="basic">💳 BASIC (500 bills/mo)</option>
                         <option value="pro">💎 PRO (Unlimited)</option>
                     </select>
@@ -93,6 +93,20 @@
                     <input type="tel" id="agMobile" placeholder="03xx-xxxxxxx">
                 </div>
             </div>
+
+            <!-- 🆕🔐 PERMISSIONS CHECKBOXES (Sab ON default — admin toggle kare!) -->
+            <div class="form-group" style="width:100%;">
+                <label>🔐 Permissions (Owner ke liye — sab ON default)</label>
+                <div class="perm-checks">
+                    <label class="perm-check"><input type="checkbox" id="agPermInstant" checked> ⚡ Instant Bill</label>
+                    <label class="perm-check"><input type="checkbox" id="agPermStock" checked> 📦 Stock Bill</label>
+                    <label class="perm-check"><input type="checkbox" id="agPermNTN" checked> 🔢 NTN Show</label>
+                    <label class="perm-check"><input type="checkbox" id="agPermAgency" checked> 🏢 Agency/Bookers</label>
+                    <label class="perm-check"><input type="checkbox" id="agPermReports" checked> 📊 Reports</label>
+                    <label class="perm-check"><input type="checkbox" id="agPermBackup" checked> 💾 Backup</label>
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-primary" id="createAgencyBtn">
                 <i class="fas fa-plus"></i> CREATE AGENCY
             </button>
