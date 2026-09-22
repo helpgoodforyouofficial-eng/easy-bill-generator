@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Bill Generator — New Bill</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Panels CSS (same theme — panels.css) -->
+    <link rel="stylesheet" href="panels.css">
+
+    <!-- 🆕 Bills CSS (specific styles) -->
+    <link rel="stylesheet" href="bills.css">
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="panel-topbar">
+    <div class="brand">
+        <div class="logo-mini">🧾</div>
+        <div>
+            <div class="brand-name">New Bill</div>
+            <div class="brand-sub" id="modeLabel">⚡ Instant Mode</div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <button class="btn btn-back" onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+        <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+    </div>
+</div>
+
+<div class="panel-container">
+
+    <!-- ===== MODE TABS ===== -->
+    <div class="panel-card">
+        <div class="mode-tabs">
+            <button class="mode-tab active" id="tabInstant">⚡ Instant Bill</button>
+            <button class="mode-tab" id="tabStock">📦 Bill from Stock</button>
+        </div>
+
+        <!-- Bill No Display -->
+        <div class="billno-box">
+            <span class="label">🧾 Bill No:</span>
+            <span class="value" id="billNoDisplay">—</span>
+        </div>
+
+        <!-- 👤 CUSTOMER -->
+        <div class="form-group">
+            <label>👤 Customer Name (type karein — suggestions aayengi! Ya Counter Sale)</label>
+            <input type="text" id="custNameInput" placeholder="Counter Sale" autocomplete="off">
+            <div class="suggest-box" id="custSuggest"></div>
+        </div>
+
+        <!-- 🆕 CUSTOMER INFO DISPLAY (mobile/address/route/balance) -->
+        <div class="cust-info-box" id="custInfoBox"></div>
+
+        <!-- 📝 ITEMS -->
+        <div class="card-header" style="margin-top:10px;">
+            <h2><i class="fas fa-list"></i> Items</h2>
+        </div>
+        <div id="itemsRows">
+            <!-- Item rows JS se add hongi -->
+        </div>
+        <button type="button" class="add-row-btn" id="addItemRowBtn">
+            <i class="fas fa-plus"></i> Add Item Row
+        </button>
+
+        <!-- 💰 TOTALS -->
+        <div class="totals-box" style="margin-top:15px;">
+            <div class="total-row">
+                <span>Sub Total:</span>
+                <span>Rs <span id="sumSubTotal">0.00</span></span>
+            </div>
+            <div class="total-row">
+                <span>Discount:</span>
+                <input type="number" id="sumDiscount" value="0" min="0" step="0.01"
+                       style="width:90px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:right;">
+            </div>
+            <div class="total-row grand">
+                <span>Grand Total:</span>
+                <span>Rs <span id="sumGrand">0.00</span></span>
+            </div>
+            <div class="total-row">
+                <span>💵 Received:</span>
+                <input type="number" id="sumReceived" value="0" min="0" step="0.01"
+                       style="width:90px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:right;">
+            </div>
+            <div class="total-row balance">
+                <span>Balance:</span>
+                <span>Rs <span id="sumBalance">0.00</span></span>
+            </div>
+        </div>
+
+        <!-- 💾 SAVE BUTTON -->
+        <button class="btn-save-bill" id="saveBillBtn" style="margin-top:15px;">
+            💾 SAVE BILL
+        </button>
+    </div>
+
+</div>
+
+<!-- Firebase SDK (Compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- 🧭 SIDEBAR SYSTEM -->
+<script src="sidebar.js"></script>
+<!-- 🧾 BILLS LOGIC -->
+<script src="bills.js"></script>
+</body>
+</html>
