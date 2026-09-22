@@ -1,0 +1,233 @@
+/* ============================================
+   🧾 EASY BILL GENERATOR — BILLS STYLES
+   (Mobile-first + PC — panels.css ke sath)
+   ============================================ */
+:root {
+    --primary: #2c3e50;
+    --accent: #27ae60;
+    --share: #3498db;
+    --bg: #f4f7f6;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+}
+
+/* Agar panels.css load ho to ye sirf extras hain — 
+   body/topbar waghera panels.css se aate hain! */
+
+/* ===== MODE TABS ===== */
+.mode-tabs {
+    display: flex;
+    background: #ecf0f1;
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 15px;
+}
+.mode-tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    color: #7f8c8d;
+    transition: all 0.2s;
+}
+.mode-tab.active { background: var(--primary); color: #fff; }
+.mode-tab.disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== BILL NO BOX ===== */
+.billno-box {
+    background: #eef2f7;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.billno-box .label { font-size: 12px; font-weight: bold; color: #7f8c8d; }
+.billno-box .value { font-size: 20px; font-weight: bold; color: var(--primary); }
+
+/* ===== FORM GROUPS ===== */
+.form-group { margin-bottom: 14px; position: relative; }
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e6e8;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    background: #fafbfc;
+}
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--share);
+    background: #fff;
+}
+
+/* ===== SUGGESTIONS (Customer + Stock items dono!) ===== */
+.suggest-box {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    z-index: 100;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+}
+.suggest-box.show { display: block; }
+.suggest-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+}
+.suggest-item:hover { background: #f0f7ff; }
+.suggest-item .s-sub { font-size: 11px; color: #95a5a6; }
+
+/* ===== CUSTOMER INFO BOX ===== */
+.cust-info-box {
+    background: #eef2f7;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 14px;
+    display: none;
+    line-height: 1.7;
+}
+.cust-info-box.show { display: block; }
+.cust-balance-chip {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    font-weight: bold;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+
+/* ===== ITEM ROWS ===== */
+.item-row {
+    background: #f8f9fa;
+    border: 1px solid #e8ecef;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+    position: relative;
+}
+.item-row .row-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+.item-row input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e6e8;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+}
+.item-row input:focus { border-color: var(--share); }
+.item-row .row-qty-rate {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.item-row .row-total {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--primary);
+    text-align: right;
+}
+.item-row .row-del {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 28px; height: 28px;
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.stock-hint {
+    font-size: 11px;
+    color: #856404;
+    background: #fff3cd;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+/* ===== TOTALS ===== */
+.totals-box { background: #f8f9fa; border-radius: 10px; padding: 5px 15px; }
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+}
+.total-row.grand {
+    border-top: 2px solid #333;
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--primary);
+}
+.total-row.balance { color: var(--danger); font-weight: bold; }
+
+/* ===== SAVE BUTTON ===== */
+.btn-save-bill {
+    width: 100%;
+    padding: 15px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.btn-save-bill:hover { background: #219150; }
+.btn-save-bill:disabled { background: #95a5a6; }
+
+/* ===== ADD ROW BUTTON ===== */
+.add-row-btn {
+    width: 100%;
+    padding: 11px;
+    background: #eef2f7;
+    color: var(--primary);
+    border: 2px dashed #b8c4cc;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+/* ===== STATES ===== */
+.empty-inline { text-align: center; color: #95a5a6; font-size: 13px; padding: 20px; }
+
+/* ===== Z-INDEX (SweetAlert upar!) ===== */
+.swal2-container { z-index: 999999 !important; }
+.suggest-box { z-index: 99999; }
+
+/* ===== PC ===== */
+@media (min-width: 768px) {
+    body { padding: 20px; }
+    .panel-card { padding: 25px; }
+    .item-row .row-grid { grid-template-columns: 2fr 1fr; }
+}
