@@ -509,6 +509,85 @@
         }
     }
 
+// ============================================
+// 🔐 PERMISSIONS EDIT (Agency-wise!)
+// ============================================
+async function editPermissions(agencyId) {
+    // Agency + owner ki profile fetch
+    const agDoc = await db.collection('agencies').doc(agencyId).get();
+    if (!agDoc.exists) return;
+    const ag = agDoc.data();
+
+    // Owner ki user profile se permissions lo
+    let perms = { instant: true, stock: true, ntn: true, agency: true, reports: true, backup: true };
+    try {
+        const ownerDoc = await db.collection('users').doc(ag.ownerUid).get();
+        if (ownerDoc.exists && ownerDoc.data().permissions) {
+            perms = ownerDoc.data().permissions;
+        }
+    } catch (e) {}
+
+    const P = [
+        { key: 'instant', icon: '⚡', label: 'Instant Bill' },
+        { key: 'stock', icon: '📦', label: 'Stock Bill' },
+        { key: 'ntn', icon: '🔢', label: 'NTN Show' },
+        { key: 'agency', icon: '🏢', label: 'Agency/Bookers' },
+        { key: 'reports', icon: '📊', label: 'Reports' },
+        { key: 'backup', icon: '💾', label: 'Backup' }
+    ];
+
+    let html = '';
+    P.forEach(p => {
+        html += `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
+            <span style="font-size:14px;">${p.icon} ${p.label}</span>
+            <label style="cursor:pointer;">
+                <input type="checkbox" class="perm-edit" data-key="${p.key}" ${perms[p.key] ? 'checked' : ''} style="width:18px; height:18px; accent-color:#27ae60;">
+            </label>
+        </div>`;
+    });
+
+    const result = await Swal.fire({
+        title: `🔐 Permissions: ${ag.name}`,
+        html: `<div style="text-align:left;">${html}</div>
+               <small style="color:#856404;">OFF = user ko 🔒 LOCKED dikhega (feature chhupta nahi, bas kaam nahi karega!)</small>`,
+        showCancelButton: true,
+        confirmButtonColor: '#27ae60',
+        confirmButtonText: '💾 Save Permissions',
+        cancelButtonText: 'Cancel',
+        preConfirm: () => {
+            const newPerms = {};
+            document.querySelectorAll('.perm-edit').forEach(cb => {
+                newPerms[cb.dataset.key] = cb.checked;
+            });
+            return newPerms;
+        }
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        // Owner ki profile update
+        await db.collection('users').doc(ag.ownerUid).update({
+            permissions: result.value,
+            permissionsUpdatedAt: new Date().toISOString()
+        });
+
+        // Agency document mein bhi save (backup — Phase 2.5 bookers inherit karenge!)
+        await db.collection('agencies').doc(agencyId).update({
+            ownerPermissions: result.value
+        });
+
+        Swal.fire({
+            toast: true, position: 'top-end', showConfirmButton: false,
+            timer: 2200, icon: 'success',
+            title: '✅ Permissions saved! Owner ko refresh karwao ge to effect hoga.'
+        });
+    } catch (e) {
+        Swal.fire('❌ Error', 'Save fail: ' + e.code, 'error');
+    }
+}
+
     // ============================================
     // 🚪 LOGOUT
     // ============================================
