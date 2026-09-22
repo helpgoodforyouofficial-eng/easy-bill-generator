@@ -337,16 +337,35 @@
                 createdBy: currentAdminUid
             });
 
-            // 4. Owner ki user profile banao (role: owner, agency linked!)
+                        // 4. 🆕 Owner ki user profile banao (CHECKBOX permissions ke sath!)
             await db.collection('users').doc(ownerUid).set({
                 email: email,
                 name: name + ' (Owner)',
                 role: 'owner',
                 loginMethod: 'password',
                 agencyId: agencyRef.id,
-                permissions: { instant: true, stock: true },
+                permissions: {
+                    instant: document.getElementById('agPermInstant').checked,
+                    stock: document.getElementById('agPermStock').checked,
+                    ntn: document.getElementById('agPermNTN').checked,
+                    agency: document.getElementById('agPermAgency').checked,
+                    reports: document.getElementById('agPermReports').checked,
+                    backup: document.getElementById('agPermBackup').checked
+                },
                 createdAt: new Date().toISOString(),
                 createdBy: currentAdminUid
+            });
+
+            // 🆕 Agency document mein bhi ownerPermissions save (backup!)
+            await db.collection('agencies').doc(agencyRef.id).update({
+                ownerPermissions: {
+                    instant: document.getElementById('agPermInstant').checked,
+                    stock: document.getElementById('agPermStock').checked,
+                    ntn: document.getElementById('agPermNTN').checked,
+                    agency: document.getElementById('agPermAgency').checked,
+                    reports: document.getElementById('agPermReports').checked,
+                    backup: document.getElementById('agPermBackup').checked
+                }
             });
 
             // ✅ Success!
