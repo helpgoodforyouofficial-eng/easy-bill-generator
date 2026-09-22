@@ -78,7 +78,7 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         // Permissions
-        myPermissions = me.permissions || { instant: true, stock: true };
+        myPermissions = me.permissions || { instant: true, stock: true, ntn: true };
 
         // Agency load
         try {
@@ -103,6 +103,10 @@ auth.onAuthStateChanged(async (user) => {
             switchMode('stock');
         }
 
+        // 🆕 NTN PERMISSION CHECK (ek hi jagah — clean!)
+        const ntnWrap = document.querySelector('.ntn-wrap');
+        if (ntnWrap) ntnWrap.style.display = myPermissions.ntn ? '' : 'none';
+
     } catch (error) {
         console.error('Bills init error:', error);
         Swal.fire('Error', 'Load fail: ' + (error.code || error.message), 'error');
@@ -121,7 +125,17 @@ function setupModeTabs() {
 
     tabI.addEventListener('click', () => {
         if (!myPermissions.instant) {
-            Swal.fire('🔒', 'Instant Bills aap ke liye allowed nahi hain!', 'info');
+            // 🆕 INSTANT = FREE BILLS par redirect (paid app mein nahi!)
+            Swal.fire({
+                icon: 'info',
+                title: '⚡ Instant Bill — FREE App Mein!',
+                html: 'Instant bills <b>freebills.netlify.app</b> par bante hain!<br><br>Ye app <b>Premium Stock System</b> ke liye hai! 💎',
+                confirmButtonText: '🚀 Free Bills Kholein',
+                showCancelButton: true,
+                cancelButtonText: 'Cancel'
+            }).then((r) => {
+                if (r.isConfirmed) window.open('https://freebills.netlify.app', '_blank');
+            });
             return;
         }
         switchMode('instant');
@@ -160,6 +174,10 @@ function switchMode(mode) {
 
     // Bill No generate
     generateBillNo(mode);
+
+    // 🆕 NTN re-check (mode switch par bhi safe!)
+    const ntnWrap = document.querySelector('.ntn-wrap');
+    if (ntnWrap) ntnWrap.style.display = myPermissions.ntn ? '' : 'none';
 
     calcTotals();
 }
