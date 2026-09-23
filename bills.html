@@ -14,11 +14,17 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Panels CSS (same theme — panels.css) -->
+    <!-- Panels CSS -->
     <link rel="stylesheet" href="panels.css">
 
-    <!-- 🆕 Bills CSS (specific styles) -->
+    <!-- Bills CSS -->
     <link rel="stylesheet" href="bills.css">
+
+    <!-- 🆕 Z-INDEX FIX -->
+    <style>
+        .swal2-container { z-index: 999999 !important; }
+        .suggest-box { z-index: 99999; }
+    </style>
 </head>
 <body>
 
@@ -42,11 +48,10 @@
     <!-- ===== MODE TABS ===== -->
     <div class="panel-card">
         <div class="mode-tabs">
-            <button class="mode-tab active" id="tabInstant">⚡ Instant Bill</button>
-            <button class="mode-tab" id="tabStock">📦 Bill from Stock</button>
+            <button class="mode-tab active" id="tabStock">📦 Bill from Stock</button>
+            <button class="mode-tab" id="tabInstant" style="display:none;">⚡ Instant Bill</button>
         </div>
 
-        <!-- Bill No Display -->
         <div class="billno-box">
             <span class="label">🧾 Bill No:</span>
             <span class="value" id="billNoDisplay">—</span>
@@ -54,21 +59,19 @@
 
         <!-- 👤 CUSTOMER -->
         <div class="form-group">
-            <label>👤 Customer Name (type karein — suggestions aayengi! Ya Counter Sale)</label>
+            <label>👤 Customer Name (type karein — suggestions! Ya Counter Sale)</label>
             <input type="text" id="custNameInput" placeholder="Counter Sale" autocomplete="off">
             <div class="suggest-box" id="custSuggest"></div>
         </div>
 
-        <!-- 🆕 CUSTOMER INFO DISPLAY (mobile/address/route/balance) -->
+        <!-- 🆕 CUSTOMER INFO DISPLAY -->
         <div class="cust-info-box" id="custInfoBox"></div>
 
         <!-- 📝 ITEMS -->
         <div class="card-header" style="margin-top:10px;">
             <h2><i class="fas fa-list"></i> Items</h2>
         </div>
-        <div id="itemsRows">
-            <!-- Item rows JS se add hongi -->
-        </div>
+        <div id="itemsRows"></div>
         <button type="button" class="add-row-btn" id="addItemRowBtn">
             <i class="fas fa-plus"></i> Add Item Row
         </button>
@@ -99,9 +102,43 @@
             </div>
         </div>
 
-        <!-- 💾 SAVE BUTTON -->
         <button class="btn-save-bill" id="saveBillBtn" style="margin-top:15px;">
             💾 SAVE BILL
+        </button>
+    </div>
+
+    <!-- 🆕✅ SUCCESS SCREEN -->
+    <div class="panel-card" id="successScreen" style="display:none; border-top: 4px solid var(--accent);">
+        <div style="text-align:center; padding: 15px 0 20px;">
+            <div style="font-size:60px;">✅</div>
+            <h2 style="color: var(--primary); margin: 10px 0 5px;">Bill Saved Successfully!</h2>
+            <div style="font-size: 22px; font-weight: bold; color: var(--accent);" id="ssBillNo">STK-1</div>
+            <div style="font-size: 14px; color: #7f8c8d; margin-top: 5px;" id="ssCustomer">—</div>
+        </div>
+
+        <div class="totals-box" style="margin-bottom: 20px;">
+            <div class="total-row"><span>Grand Total:</span><span>Rs <span id="ssGrand">0.00</span></span></div>
+            <div class="total-row"><span>Received:</span><span>Rs <span id="ssReceived">0.00</span></span></div>
+            <div class="total-row balance"><span>Balance:</span><span>Rs <span id="ssBalance">0.00</span></span></div>
+        </div>
+
+        <div class="output-grid">
+            <button class="output-btn" id="outPrintBtn" style="background: var(--primary);">
+                <i class="fas fa-print"></i> PRINT
+            </button>
+            <button class="output-btn" id="outPdfBtn" style="background: #e74c3c;">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+            <button class="output-btn" id="outJpgBtn" style="background: #f39c12;">
+                <i class="fas fa-image"></i> JPG
+            </button>
+            <button class="output-btn" id="outShareBtn" style="background: #25d366;">
+                <i class="fab fa-whatsapp"></i> SHARE
+            </button>
+        </div>
+
+        <button class="btn-new-bill" id="outNewBillBtn">
+            🆕 NEW BILL (Fresh Start)
         </button>
     </div>
 
