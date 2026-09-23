@@ -1,10 +1,14 @@
 // ============================================
-// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, Drop B1)
-// ✅ Dual Mode: ⚡ Instant (free typing) + 📦 Stock (auto-fetch!)
-// ✅ Customer auto-suggest (Firestore) + info display
-// ✅ Received/Balance live calc + Customer balance update
-// ✅ INS-x / STK-x number series (agency-wise, prefix-ready!)
-// ✅ Stock minus + movement log (sale!)
+// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, v2 OPTIMIZED!)
+// ✅ Dual Mode (Stock-first — Instant hidden/disabled!)
+// ✅ 🔥 QUOTA OPTIMIZED:
+//    ├── COUNTER SYSTEM: Bill No = 1 read + 1 write (N reads khatam!)
+//    ├── BATCHED WRITES: bill + stock minus + movements + customer
+//    │   = EK ATOMIC OPERATION (fast + safe + efficient!)
+//    └── COMPACT MOVEMENTS: bill-level 1 doc (items array ke sath!)
+// ✅ Customer suggest + info + balance update
+// ✅ Stock suggest + available hint
+// ✅ Success Screen + Print/PDF/JPG/Share
 // ✅ Multi-tenant + permissions
 // ============================================
 
@@ -28,16 +32,14 @@ const db = firebase.firestore();
 let myUid = null;
 let myAgencyId = null;
 let myAgency = null;
-let myPermissions = { instant: true, stock: true };
-let currentMode = 'instant';
+let myPermissions = { instant: false, stock: true }; // Instant ab OFF default (paid feature — freebills!)
+let currentMode = 'stock';
 let billNo = '';
 let allMyCustomers = [];
 let allMyStock = [];
 let selectedCustomer = null;
+let lastSavedBill = null;
 
-// ============================================
-// 📏 UNIT LABELS
-// ============================================
 function UNIT_LBL(u) {
     const m = { 'kg': 'kg', 'g': 'g', 'pound': 'lb', 'maund': 'Maund', 'liter': 'L',
                 'pcs': 'pcs', 'dozen': 'Dozen', 'packet': 'Pkt', 'bag': 'Bag',
@@ -77,35 +79,30 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
 
-        // Permissions
-        myPermissions = me.permissions || { instant: true, stock: true, ntn: true };
+        myPermissions = me.permissions || { instant: false, stock: true };
 
-        // Agency load
         try {
             const agDoc = await db.collection('agencies').doc(myAgencyId).get();
             myAgency = agDoc.exists ? agDoc.data() : {};
         } catch (e) {}
 
-        // Mode tabs setup
         setupModeTabs();
-
-        // Data load
         loadCustomers();
         loadStock();
 
-        // URL param: ?mode=stock
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('mode') === 'stock' && myPermissions.stock) {
-            switchMode('stock');
-        } else if (myPermissions.instant) {
+        const urlMode = urlParams.get('mode');
+
+        if (urlMode === 'instant' && myPermissions.instant) {
             switchMode('instant');
         } else if (myPermissions.stock) {
             switchMode('stock');
+        } else if (myPermissions.instant) {
+            switchMode('instant');
+        } else {
+            Swal.fire('🔒', 'Aap ke liye koi bill mode allowed nahi hai! Admin se contact karein.', 'error')
+                .then(() => window.location.href = 'dashboard.html');
         }
-
-        // 🆕 NTN PERMISSION CHECK (ek hi jagah — clean!)
-        const ntnWrap = document.querySelector('.ntn-wrap');
-        if (ntnWrap) ntnWrap.style.display = myPermissions.ntn ? '' : 'none';
 
     } catch (error) {
         console.error('Bills init error:', error);
@@ -114,39 +111,41 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================
-// 🔄 MODE TABS SETUP
+// 🔄 MODE TABS
 // ============================================
 function setupModeTabs() {
     const tabI = document.getElementById('tabInstant');
     const tabS = document.getElementById('tabStock');
 
-    if (!myPermissions.instant) tabI.classList.add('disabled');
-    if (!myPermissions.stock) tabS.classList.add('disabled');
+    // ⚡ INSTANT TAB — Free Bills redirect (paid app mein nahi!)
+    tabI.style.display = 'none'; // 🆕 Hidden — Instant freebills ka kaam hai!
 
-    tabI.addEventListener('click', () => {
-        if (!myPermissions.instant) {
-            // 🆕 INSTANT = FREE BILLS par redirect (paid app mein nahi!)
-            Swal.fire({
-                icon: 'info',
-                title: '⚡ Instant Bill — FREE App Mein!',
-                html: 'Instant bills <b>freebills.netlify.app</b> par bante hain!<br><br>Ye app <b>Premium Stock System</b> ke liye hai! 💎',
-                confirmButtonText: '🚀 Free Bills Kholein',
-                showCancelButton: true,
-                cancelButtonText: 'Cancel'
-            }).then((r) => {
-                if (r.isConfirmed) window.open('https://freebills.netlify.app', '_blank');
-            });
-            return;
-        }
-        switchMode('instant');
-    });
+    if (!myPermissions.stock) {
+        tabS.classList.add('disabled');
+    } else {
+        tabS.classList.add('active'); // Stock default active!
+    }
 
     tabS.addEventListener('click', () => {
         if (!myPermissions.stock) {
-            Swal.fire('🔒', 'Stock Bills aap ke liye allowed nahi hain!', 'info');
+            Swal.fire('🔒', 'Stock Bills allowed nahi hain!', 'info');
             return;
         }
         switchMode('stock');
+    });
+
+    tabI.addEventListener('click', () => {
+        // 🆕 Instant dabao to Free Bills popup!
+        Swal.fire({
+            icon: 'info',
+            title: '⚡ Instant Bill — FREE App Mein!',
+            html: 'Instant bills <b>freebills.netlify.app</b> par bante hain!<br><br>Ye app <b>Premium Stock System</b> ke liye hai! 💎',
+            confirmButtonText: '🚀 Free Bills Kholein',
+            showCancelButton: true,
+            cancelButtonText: 'Cancel'
+        }).then((r) => {
+            if (r.isConfirmed) window.open('https://freebills.netlify.app', '_blank');
+        });
     });
 }
 
@@ -158,24 +157,19 @@ function switchMode(mode) {
     document.getElementById('tabInstant').classList.toggle('active', mode === 'instant');
     document.getElementById('tabStock').classList.toggle('active', mode === 'stock');
 
-    // Mode label update
     const modeLabel = document.getElementById('modeLabel');
     if (modeLabel) modeLabel.innerText = mode === 'instant' ? '⚡ Instant Mode' : '📦 Stock Mode';
 
-    // Items clear + pehli row
     document.getElementById('itemsRows').innerHTML = '';
     addRow();
 
-    // Customer reset
     selectedCustomer = null;
     document.getElementById('custNameInput').value = '';
     document.getElementById('custInfoBox').classList.remove('show');
     document.getElementById('custInfoBox').innerHTML = '';
 
-    // Bill No generate
     generateBillNo(mode);
 
-    // 🆕 NTN re-check (mode switch par bhi safe!)
     const ntnWrap = document.querySelector('.ntn-wrap');
     if (ntnWrap) ntnWrap.style.display = myPermissions.ntn ? '' : 'none';
 
@@ -183,64 +177,63 @@ function switchMode(mode) {
 }
 
 // ============================================
-// 🔢 BILL NO GENERATE (agency-wise, type-wise!)
+// 🔢 BILL NO — 🔥 COUNTER SYSTEM (Quota Optimized!)
+// 1 READ (agency counter) + 1 WRITE (counter update)
+// — bills collection ki N reads KHATAM!
 // ============================================
 async function generateBillNo(type) {
     const prefix = (myAgency && myAgency.billPrefixes && myAgency.billPrefixes[type])
         ? myAgency.billPrefixes[type]
         : (type === 'instant' ? 'INS-' : 'STK-');
 
-    try {
-        const snap = await db.collection('bills')
-            .where('agencyId', '==', myAgencyId)
-            .where('type', '==', type)
-            .get();
+    const counterRef = db.collection('counters').doc(myAgencyId + '_' + type);
 
-        let max = 0;
-        snap.forEach(d => {
-            const m = String(d.data().billNo || '').match(/(\d+)$/);
-            if (m) max = Math.max(max, parseInt(m[1], 10));
+    try {
+        const result = await db.runTransaction(async (tx) => {
+            const cDoc = await tx.get(counterRef);
+            const newCount = (cDoc.exists ? (cDoc.data().count || 0) : 0) + 1;
+            tx.set(counterRef, { count: newCount, type: type, updatedAt: new Date().toISOString() });
+            return newCount;
         });
 
-        billNo = prefix + (max + 1);
+        billNo = prefix + result;
+        document.getElementById('billNoDisplay').innerText = billNo;
+
     } catch (e) {
-        console.warn('BillNo generate warning:', e.code);
-        billNo = prefix + '1';
+        console.error('Counter error:', e);
+        // Fallback: timestamp-based (unique to kabhi takrar nahi!)
+        billNo = prefix + Date.now().toString().slice(-6);
+        document.getElementById('billNoDisplay').innerText = billNo;
     }
-    document.getElementById('billNoDisplay').innerText = billNo;
 }
 
 // ============================================
-// 👥 CUSTOMERS LOAD
+// 👥 CUSTOMERS LOAD (listener — efficient!)
 // ============================================
 function loadCustomers() {
     db.collection('customers')
         .where('agencyId', '==', myAgencyId)
         .onSnapshot((snap) => {
             allMyCustomers = [];
-            snap.forEach(d => {
-                allMyCustomers.push({ id: d.id, ...d.data() });
-            });
+            snap.forEach(d => allMyCustomers.push({ id: d.id, ...d.data() }));
         }, (e) => console.warn('Customers load:', e.code));
 }
 
 // ============================================
-// 📦 STOCK LOAD
+// 📦 STOCK LOAD (listener)
 // ============================================
 function loadStock() {
     db.collection('stock')
         .where('agencyId', '==', myAgencyId)
         .onSnapshot((snap) => {
             allMyStock = [];
-            snap.forEach(d => {
-                allMyStock.push({ id: d.id, ...d.data() });
-            });
+            snap.forEach(d => allMyStock.push({ id: d.id, ...d.data() }));
             allMyStock.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         }, (e) => console.warn('Stock load:', e.code));
 }
 
 // ============================================
-// 👤 CUSTOMER SUGGESTIONS + INFO DISPLAY
+// 👤 CUSTOMER SUGGEST + INFO
 // ============================================
 const custInput = document.getElementById('custNameInput');
 const custSuggest = document.getElementById('custSuggest');
@@ -287,7 +280,6 @@ custInput.addEventListener('input', function() {
             custInput.value = c.name;
             custSuggest.classList.remove('show');
 
-            // Info display
             let info = '';
             if (c.mobile) info += `📱 ${c.mobile}<br>`;
             if (c.address) info += `📍 ${c.address}<br>`;
@@ -303,7 +295,6 @@ custInput.addEventListener('input', function() {
     });
 });
 
-// Bahar click → suggest band
 document.addEventListener('click', (e) => {
     if (!custInput.contains(e.target) && !custSuggest.contains(e.target)) {
         custSuggest.classList.remove('show');
@@ -311,7 +302,7 @@ document.addEventListener('click', (e) => {
 });
 
 // ============================================
-// 📝 ITEM ROWS
+// 📝 ITEM ROWS (Stock suggest in stock mode!)
 // ============================================
 document.getElementById('addItemRowBtn').addEventListener('click', () => addRow());
 
@@ -326,7 +317,7 @@ function addRow(data = {}) {
         <button type="button" class="row-del" onclick="removeRow('${rowId}')">✖</button>
         <div class="row-grid">
             <div style="position:relative;">
-                <input type="text" class="ir-name" placeholder="${currentMode === 'stock' ? 'Stock item likhein...' : 'Item Name'}" 
+                <input type="text" class="ir-name" placeholder="Stock item likhein..." 
                        value="${data.name || ''}" autocomplete="off" required>
                 <div class="suggest-box ir-suggest"></div>
             </div>
@@ -346,7 +337,6 @@ function addRow(data = {}) {
     const suggest = row.querySelector('.ir-suggest');
     const hint = row.querySelector('.stock-hint');
 
-    // Calc on input
     [qtyInput, rateInput].forEach(inp => {
         inp.addEventListener('input', () => {
             const t = (parseFloat(qtyInput.value) || 0) * (parseFloat(rateInput.value) || 0);
@@ -355,12 +345,9 @@ function addRow(data = {}) {
         });
     });
 
-    // 🆕 STOCK MODE: name input → stock suggestions!
+    // 📦 STOCK SUGGESTIONS (type karo → items with qty/rate!)
     nameInput.addEventListener('input', function() {
         const val = this.value.toLowerCase().trim();
-
-        // Sirf STOCK mode mein suggestions (instant = free typing!)
-        if (currentMode !== 'stock') { suggest.classList.remove('show'); return; }
         if (!val) { suggest.classList.remove('show'); return; }
 
         const matches = allMyStock.filter(s =>
@@ -369,7 +356,6 @@ function addRow(data = {}) {
 
         if (matches.length === 0) {
             suggest.classList.remove('show');
-            hint.style.display = 'none';
             return;
         }
 
@@ -403,7 +389,7 @@ function addRow(data = {}) {
                 hint.innerHTML = `📦 Available: <b>${s.qty || 0} ${UNIT_LBL(s.unit)}</b>`;
                 if ((s.qty || 0) <= 0) {
                     hint.style.color = '#c0392b';
-                    hint.innerHTML += ' — ⚠️ Stock khali hai!';
+                    hint.innerHTML += ' — ⚠️ Stock khali!';
                 } else {
                     hint.style.color = '#856404';
                 }
@@ -430,7 +416,7 @@ function removeRow(rowId) {
 }
 
 // ============================================
-// 🧮 TOTALS CALC
+// 🧮 TOTALS
 // ============================================
 function calcTotals() {
     let subTotal = 0;
@@ -455,7 +441,9 @@ document.getElementById('sumDiscount').addEventListener('input', calcTotals);
 document.getElementById('sumReceived').addEventListener('input', calcTotals);
 
 // ============================================
-// 💾 SAVE BILL (Firebase + Stock minus + Balance update!)
+// 💾 SAVE BILL — 🔥 BATCHED WRITE (Quota Optimized!)
+// EK ATOMIC OPERATION: bill + stock minus + compact movements 
+// + customer balance — sab ek batch mein! (Fast + Safe!)
 // ============================================
 document.getElementById('saveBillBtn').addEventListener('click', async () => {
     const items = [];
@@ -486,14 +474,46 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
     const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
     const balance = (prevBal + grand) - received;
 
+    // 🆕 STOCK MODE VALIDATION: qty available se zyada to warning (permissive!)
+    if (currentMode === 'stock') {
+        const lowStockWarnings = [];
+        items.forEach(it => {
+            if (!it.stockId) return;
+            const s = allMyStock.find(x => x.id === it.stockId);
+            if (s && (s.qty || 0) < it.qty) {
+                lowStockWarnings.push(`${it.name}: stock ${s.qty}, mangwaye ${it.qty}!`);
+            }
+        });
+        if (lowStockWarnings.length > 0) {
+            const proceed = await Swal.fire({
+                icon: 'warning',
+                title: '⚠️ Stock Se Zyada!',
+                html: `<b>Ye items stock se zyada hain:</b><br>${lowStockWarnings.join('<br>')}<br><br>
+                       <small>Phir bhi bill banana hai? (Minus stock mein chala jayega)</small>`,
+                showCancelButton: true,
+                confirmButtonText: '✅ Haan, Banayein',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#f39c12'
+            });
+            if (!proceed.isConfirmed) return;
+        }
+    }
+
     document.getElementById('saveBillBtn').disabled = true;
 
     try {
-        // 🔢 Fresh Bill No
+        // 🔢 Counter se FRESH bill no (1 read + 1 write!)
         await generateBillNo(currentMode);
 
-        // 1. BILL SAVE
-        await db.collection('bills').add({
+        // ============================================
+        // 🔥 BATCHED WRITE — EK ATOMIC OPERATION!
+        // (Network trips kam, speed fast, data safe!)
+        // ============================================
+        const batch = db.batch();
+
+        // 1️⃣ BILL DOC
+        const billRef = db.collection('bills').doc();
+        const billData = {
             billNo: billNo,
             type: currentMode,
             agencyId: myAgencyId,
@@ -501,7 +521,8 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             customerName: customerName,
             customerId: selectedCustomer ? selectedCustomer.id : null,
             customerMobile: selectedCustomer ? (selectedCustomer.mobile || '') : '',
-            items: items,
+            items: items,                       // 🆕 Items ARRAY ke andar (alag docs nahi!)
+            itemCount: items.length,
             subTotal: subTotal,
             discount: discount,
             grandTotal: grand,
@@ -511,67 +532,304 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             date: new Date().toISOString().slice(0, 10),
             time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
             createdAt: new Date().toISOString()
-        });
+        };
+        batch.set(billRef, billData);
 
-        // 2. 📦 STOCK MODE: STOCK MINUS + MOVEMENTS!
+        // 2️⃣ 📦 STOCK MINUS (har stock item — batch mein!)
         if (currentMode === 'stock') {
-            for (const it of items) {
-                if (!it.stockId) continue;
+            const movements = [];   // 🆕 COMPACT movements (bill doc ke sath array!)
+            
+            items.forEach(it => {
+                if (!it.stockId) return;
                 const s = allMyStock.find(x => x.id === it.stockId);
-                if (!s) continue;
+                if (!s) return;
 
                 const newQty = (s.qty || 0) - it.qty;
-                await db.collection('stock').doc(it.stockId).update({
+                batch.update(db.collection('stock').doc(it.stockId), {
                     qty: newQty,
                     updatedAt: new Date().toISOString()
                 });
-                await db.collection('movements').add({
-                    agencyId: myAgencyId,
-                    itemId: it.stockId,
+
+                movements.push({
                     itemName: it.name,
+                    qty: it.qty,
+                    beforeQty: s.qty || 0,
+                    afterQty: newQty
+                });
+            });
+
+            // 3️⃣ 📜 COMPACT MOVEMENT DOC (1 write — saari movements array mein!)
+            // (Pehle har item ka alag doc tha = 5 writes! Ab 1 write!)
+            if (movements.length > 0) {
+                const moveRef = db.collection('movements').doc();
+                batch.set(moveRef, {
+                    agencyId: myAgencyId,
+                    billNo: billNo,
+                    customerName: customerName,
                     type: 'out',
                     reason: 'sale',
                     reasonLabel: '🛒 Sale (Bill ' + billNo + ')',
-                    qty: it.qty,
-                    beforeQty: s.qty || 0,
-                    afterQty: newQty,
-                    note: 'Bill ' + billNo + ' — ' + customerName,
+                    movements: movements,      // 🆕 items array ke sath!
+                    totalMoved: movements.reduce((s, m) => s + m.qty, 0),
                     createdBy: myUid,
                     createdAt: new Date().toISOString()
                 });
             }
         }
 
-        // 3. 👤 CUSTOMER BALANCE UPDATE
+        // 4️⃣ 👤 CUSTOMER BALANCE UPDATE
         if (selectedCustomer) {
-            await db.collection('customers').doc(selectedCustomer.id).update({
+            batch.update(db.collection('customers').doc(selectedCustomer.id), {
                 balance: balance,
                 lastBillNo: billNo,
                 lastBillAt: new Date().toISOString()
             });
         }
 
-        // ✅ SUCCESS
-        await Swal.fire({
-            icon: 'success',
-            title: '✅ Bill Saved!',
-            html: `<b>${billNo}</b><br>Customer: ${customerName}<br>
-                   Grand: Rs ${grand.toFixed(2)} | Received: Rs ${received.toFixed(2)}<br>
-                   Balance: Rs ${balance.toFixed(2)}`,
-            timer: 3500,
-            showConfirmButton: false,
-            timerProgressBar: true
-        });
+        // 🔥 COMMIT — SAB EK SATH! (Atomic — ya sab hoga, ya kuch nahi!)
+        await batch.commit();
 
-        // 🆕 FRESH BILL
-        switchMode(currentMode);
-        document.getElementById('sumDiscount').value = 0;
-        document.getElementById('sumReceived').value = 0;
+        // ✅ SUCCESS SCREEN
+        lastSavedBill = { 
+            billNo, customerName, items, subTotal, discount, grand, received, balance, prevBal,
+            agencyCity: (myAgency && myAgency.city) || '',
+            agencyMobile: (myAgency && myAgency.mobile) || ''
+        };
+
+        document.querySelectorAll('.panel-container .panel-card').forEach((c, i) => {
+            if (i === 0) c.style.display = 'none'; // pehla card (tabs/billno)
+        });
+        document.getElementById('saveBillBtn').style.display = 'none';
+        document.getElementById('successScreen').style.display = 'block';
+
+        document.getElementById('ssBillNo').innerText = billNo;
+        document.getElementById('ssCustomer').innerText = customerName;
+        document.getElementById('ssGrand').innerText = grand.toFixed(2);
+        document.getElementById('ssReceived').innerText = received.toFixed(2);
+        document.getElementById('ssBalance').innerText = balance.toFixed(2);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
         document.getElementById('saveBillBtn').disabled = false;
         console.error('Save error:', error);
         Swal.fire('❌ Error', 'Bill save nahi hua: ' + (error.code || error.message), 'error');
+    }
+});
+
+// ============================================
+// ✅ SUCCESS SCREEN — OUTPUT FUNCTIONS
+// ============================================
+document.getElementById('outNewBillBtn').addEventListener('click', () => {
+    document.getElementById('successScreen').style.display = 'none';
+    document.getElementById('saveBillBtn').style.display = 'block';
+    
+    document.querySelectorAll('.panel-container .panel-card').forEach((c, i) => {
+        if (i === 0) c.style.display = 'block';
+    });
+    
+    switchMode(currentMode);
+    document.getElementById('sumDiscount').value = 0;
+    document.getElementById('sumReceived').value = 0;
+});
+
+// ============================================
+// 🖨️ CLEAN BILL HTML BUILDER (Print/PDF/JPG — sab isi se!)
+// ============================================
+function buildBillHTML(bill) {
+    const bizName = (myAgency && myAgency.name) || 'Easy Bill Generator';
+    const bizMobile = (myAgency && myAgency.mobile) || '';
+    const bizCity = (myAgency && myAgency.city) || '';
+    
+    return `
+    <html>
+    <head>
+        <title>Bill ${bill.billNo}</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; max-width: 650px; margin: auto; color: #333; }
+            .biz-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 12px; margin-bottom: 15px; }
+            .biz-header h1 { margin: 0; font-size: 26px; color: #2c3e50; }
+            .biz-header p { margin: 3px 0; font-size: 13px; color: #555; }
+            .bill-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+            .bill-meta div { line-height: 1.6; }
+            .cust-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
+            th { background: #f0f0f0; }
+            td.qty, td.rate, td.total { text-align: right; }
+            .totals { margin-top: 12px; }
+            .totals div { display: flex; justify-content: space-between; padding: 5px 10px; font-size: 14px; }
+            .totals .grand { border-top: 2px solid #333; font-weight: bold; font-size: 16px; }
+            .totals .bal { color: #c0392b; font-weight: bold; }
+            .sig-area { margin-top: 40px; text-align: right; }
+            .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
+            .footer-note { text-align: center; font-size: 10px; color: #888; margin-top: 25px; font-style: italic; }
+            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+        </style>
+    </head>
+    <body>
+        <div class="biz-header">
+            <h1>${bizName}</h1>
+            ${bizMobile ? `<p>📱 ${bizMobile}</p>` : ''}
+            ${bizCity ? `<p>📍 ${bizCity}</p>` : ''}
+        </div>
+        
+        <div class="bill-meta">
+            <div>
+                <b>Bill No:</b> ${bill.billNo}<br>
+                <b>Customer:</b> ${bill.customerName || 'Counter Sale'}<br>
+                <b>Date:</b> ${bill.date || '-'} | <b>Time:</b> ${bill.time || '-'}
+            </div>
+            <div style="text-align: right;">
+                <b>Type:</b> ${bill.type === 'stock' ? '📦 Stock Bill' : '⚡ Instant Bill'}<br>
+                <b>Items:</b> ${(bill.items || []).length}
+            </div>
+        </div>
+
+        <table>
+            <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
+            ${(bill.items || []).map((it, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${it.name}</td>
+                    <td class="qty">${it.qty}</td>
+                    <td class="rate">Rs ${it.rate}</td>
+                    <td class="total">Rs ${(it.total || 0).toFixed(2)}</td>
+                </tr>`).join('')}
+        </table>
+
+        <div class="totals">
+            <div><span>Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
+            <div><span>Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
+            <div class="grand"><span>Grand Total:</span><span>Rs ${(bill.grandTotal || 0).toFixed(2)}</span></div>
+            <div><span>Previous Balance:</span><span>Rs ${(bill.previousBalance || 0).toFixed(2)}</span></div>
+            <div><span>Received:</span><span>- Rs ${(bill.received || 0).toFixed(2)}</span></div>
+            <div class="bal"><span>TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
+        </div>
+
+        <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
+        
+        <div class="sig-area">
+            <div class="sig-line">Authorized Signature</div>
+        </div>
+
+        <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
+    </body>
+    </html>
+    `;
+}
+
+// 🖨️ PRINT
+document.getElementById('outPrintBtn').addEventListener('click', () => {
+    if (!lastSavedBill) return;
+    const win = window.open('', '_blank', 'width=800,height=600');
+    win.document.write(buildBillHTML(lastSavedBill));
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+});
+
+// 📄 PDF
+document.getElementById('outPdfBtn').addEventListener('click', () => {
+    if (!lastSavedBill) return;
+    const win = window.open('', '_blank', 'width=800,height=600');
+    win.document.write(buildBillHTML(lastSavedBill));
+    win.document.close();
+    setTimeout(() => {
+        win.print();
+        Swal.fire({
+            toast: true, position: 'top-end', showConfirmButton: false,
+            timer: 3000, icon: 'info',
+            title: '📄 Print dialog mein "Save as PDF" select karein!'
+        });
+    }, 500);
+});
+
+// 🖼️ JPG
+document.getElementById('outJpgBtn').addEventListener('click', async () => {
+    if (!lastSavedBill) return;
+
+    let holder = document.getElementById('jpgHolder');
+    if (!holder) {
+        holder = document.createElement('div');
+        holder.id = 'jpgHolder';
+        holder.style.cssText = 'position:absolute; left:-10000px; top:0; width:600px; background:#fff;';
+        document.body.appendChild(holder);
+    }
+    holder.innerHTML = buildBillHTML(lastSavedBill)
+        .replace('<html>', '<div>').replace('</html>', '</div>')
+        .replace('<head>', '').replace('</head>', '')
+        .replace(/<style>[\s\S]*?<\/style>/, '')
+        .replace('<body>', '').replace('</body>', '');
+
+    try {
+        const canvas = await html2canvas(holder, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const link = document.createElement('a');
+        link.download = `Bill_${lastSavedBill.billNo}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+        
+        Swal.fire({
+            toast: true, position: 'top-end', showConfirmButton: false,
+            timer: 2000, icon: 'success',
+            title: '🖼️ JPG downloaded!'
+        });
+    } catch (e) {
+        console.error(e);
+        Swal.fire('❌ Error', 'JPG fail hua!', 'error');
+    }
+});
+
+// 📤 SHARE (WhatsApp — JPG + text!)
+document.getElementById('outShareBtn').addEventListener('click', async () => {
+    if (!lastSavedBill) return;
+    const b = lastSavedBill;
+
+    let shareText = `🧾 *BILL ${b.billNo}*\n`;
+    shareText += `👤 Customer: ${b.customerName}\n`;
+    shareText += `📅 ${b.date || ''}\n\n`;
+    shareText += `📦 *Items:*\n`;
+    (b.items || []).forEach((it, i) => {
+        shareText += `${i + 1}. ${it.name} — ${it.qty} × ${it.rate} = Rs ${(it.total || 0).toFixed(2)}\n`;
+    });
+    shareText += `\n💰 Grand Total: Rs ${(b.grandTotal || 0).toFixed(2)}\n`;
+    shareText += `💵 Received: Rs ${(b.received || 0).toFixed(2)}\n`;
+    shareText += `📊 Balance: Rs ${(b.balance || 0).toFixed(2)}\n`;
+
+    try {
+        if (navigator.canShare && navigator.share) {
+            let holder = document.getElementById('jpgHolder');
+            if (!holder) {
+                holder = document.createElement('div');
+                holder.id = 'jpgHolder';
+                holder.style.cssText = 'position:absolute; left:-10000px; top:0; width:600px; background:#fff;';
+                document.body.appendChild(holder);
+            }
+            holder.innerHTML = buildBillHTML(b)
+                .replace('<html>', '<div>').replace('</html>', '</div>')
+                .replace('<head>', '').replace('</head>', '')
+                .replace(/<style>[\s\S]*?<\/style>/, '')
+                .replace('<body>', '').replace('</body>', '');
+
+            const canvas = await html2canvas(holder, { scale: 2, backgroundColor: '#ffffff' });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+            const file = new File([blob], `Bill_${b.billNo}.jpg`, { type: 'image/jpeg' });
+
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({ 
+                    files: [file], 
+                    title: `Bill ${b.billNo}`, 
+                    text: shareText 
+                });
+                return;
+            }
+        }
+
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
+
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        console.error('Share error:', e);
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank');
     }
 });
 
