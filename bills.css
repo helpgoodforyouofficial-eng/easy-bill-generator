@@ -1,6 +1,5 @@
 /* ============================================
-   🧾 EASY BILL GENERATOR — BILLS STYLES
-   (Mobile-first + PC — panels.css ke sath)
+   🧾 EASY BILL GENERATOR — BILLS STYLES (v2)
    ============================================ */
 :root {
     --primary: #2c3e50;
@@ -10,9 +9,6 @@
     --danger: #e74c3c;
     --warning: #f39c12;
 }
-
-/* Agar panels.css load ho to ye sirf extras hain — 
-   body/topbar waghera panels.css se aate hain! */
 
 /* ===== MODE TABS ===== */
 .mode-tabs {
@@ -73,7 +69,7 @@
     background: #fff;
 }
 
-/* ===== SUGGESTIONS (Customer + Stock items dono!) ===== */
+/* ===== SUGGESTIONS ===== */
 .suggest-box {
     position: absolute;
     top: 100%; left: 0; right: 0;
@@ -218,14 +214,46 @@
     font-size: 13px;
 }
 
-/* ===== STATES ===== */
-.empty-inline { text-align: center; color: #95a5a6; font-size: 13px; padding: 20px; }
+/* ===== SUCCESS SCREEN + OUTPUT ===== */
+.output-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.output-btn {
+    padding: 15px 10px;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.output-btn:hover { opacity: 0.85; transform: scale(1.02); }
+.btn-new-bill {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+}
+.btn-new-bill:hover { background: #34495e; }
 
-/* ===== Z-INDEX (SweetAlert upar!) ===== */
+/* ===== STATES + Z-INDEX ===== */
+.empty-inline { text-align: center; color: #95a5a6; font-size: 13px; padding: 20px; }
 .swal2-container { z-index: 999999 !important; }
 .suggest-box { z-index: 99999; }
 
-/* ===== PC ===== */
 @media (min-width: 768px) {
     body { padding: 20px; }
     .panel-card { padding: 25px; }
