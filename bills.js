@@ -634,91 +634,13 @@ document.getElementById('outNewBillBtn').addEventListener('click', () => {
 });
 
 // ============================================
-// 🖨️ CLEAN BILL HTML BUILDER (Print/PDF/JPG — sab isi se!)
+// 🎨 TEMPLATE SYSTEM (v1) — Agency ka chosen template!
+// 5 Templates: Urdu Classic, Traders English, Urdu+English,
+// Modern Minimal, Premium Full — bill-templates.js se!
 // ============================================
 function buildBillHTML(bill) {
-    const bizName = (myAgency && myAgency.name) || 'Easy Bill Generator';
-    const bizMobile = (myAgency && myAgency.mobile) || '';
-    const bizCity = (myAgency && myAgency.city) || '';
-    
-    return `
-    <html>
-    <head>
-        <title>Bill ${bill.billNo}</title>
-        <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; max-width: 650px; margin: auto; color: #333; }
-            .biz-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 12px; margin-bottom: 15px; }
-            .biz-header h1 { margin: 0; font-size: 26px; color: #2c3e50; }
-            .biz-header p { margin: 3px 0; font-size: 13px; color: #555; }
-            .bill-meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
-            .bill-meta div { line-height: 1.6; }
-            .cust-box { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
-            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
-            th { background: #f0f0f0; }
-            td.qty, td.rate, td.total { text-align: right; }
-            .totals { margin-top: 12px; }
-            .totals div { display: flex; justify-content: space-between; padding: 5px 10px; font-size: 14px; }
-            .totals .grand { border-top: 2px solid #333; font-weight: bold; font-size: 16px; }
-            .totals .bal { color: #c0392b; font-weight: bold; }
-            .sig-area { margin-top: 40px; text-align: right; }
-            .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
-            .footer-note { text-align: center; font-size: 10px; color: #888; margin-top: 25px; font-style: italic; }
-            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
-        </style>
-    </head>
-    <body>
-        <div class="biz-header">
-            <h1>${bizName}</h1>
-            ${bizMobile ? `<p>📱 ${bizMobile}</p>` : ''}
-            ${bizCity ? `<p>📍 ${bizCity}</p>` : ''}
-        </div>
-        
-        <div class="bill-meta">
-            <div>
-                <b>Bill No:</b> ${bill.billNo}<br>
-                <b>Customer:</b> ${bill.customerName || 'Counter Sale'}<br>
-                <b>Date:</b> ${bill.date || '-'} | <b>Time:</b> ${bill.time || '-'}
-            </div>
-            <div style="text-align: right;">
-                <b>Type:</b> ${bill.type === 'stock' ? '📦 Stock Bill' : '⚡ Instant Bill'}<br>
-                <b>Items:</b> ${(bill.items || []).length}
-            </div>
-        </div>
-
-        <table>
-            <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
-            ${(bill.items || []).map((it, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${it.name}</td>
-                    <td class="qty">${it.qty}</td>
-                    <td class="rate">Rs ${it.rate}</td>
-                    <td class="total">Rs ${(it.total || 0).toFixed(2)}</td>
-                </tr>`).join('')}
-        </table>
-
-        <div class="totals">
-            <div><span>Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
-            <div><span>Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
-            <div class="grand"><span>Grand Total:</span><span>Rs ${(bill.grandTotal || 0).toFixed(2)}</span></div>
-            <div><span>Previous Balance:</span><span>Rs ${(bill.previousBalance || 0).toFixed(2)}</span></div>
-            <div><span>Received:</span><span>- Rs ${(bill.received || 0).toFixed(2)}</span></div>
-            <div class="bal"><span>TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
-        </div>
-
-        <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
-        
-        <div class="sig-area">
-            <div class="sig-line">Authorized Signature</div>
-        </div>
-
-        <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
-    </body>
-    </html>
-    `;
+    return renderBillTemplate(bill);
 }
-
 // 🖨️ PRINT
 document.getElementById('outPrintBtn').addEventListener('click', () => {
     if (!lastSavedBill) return;
