@@ -308,6 +308,9 @@
                     document.getElementById('pfBizMobile').value = ag.mobile || '';
                     document.getElementById('pfBizCity').value = ag.city || '';
                     document.getElementById('pfBizAddress').value = ag.address || '';
+                    document.getElementById('pfBizNTN').value = ag.ntn || '';
+                    document.getElementById('pfBizReg').value = ag.regNo || '';
+                    document.getElementById('pfTemplate').value = ag.template || 'template4';
                 }
             }
 
@@ -374,6 +377,9 @@
                 mobile: document.getElementById('pfBizMobile').value.trim(),
                 city: document.getElementById('pfBizCity').value.trim(),
                 address: document.getElementById('pfBizAddress').value.trim(),
+                ntn: document.getElementById('pfBizNTN').value.trim(),
+                regNo: document.getElementById('pfBizReg').value.trim(),
+                template: document.getElementById('pfTemplate').value,
                 updatedAt: new Date().toISOString()
             });
 
