@@ -1,15 +1,16 @@
 // ============================================
-// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, v2 OPTIMIZED!)
-// ✅ Dual Mode (Stock-first — Instant hidden/disabled!)
+// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, v3 FINAL!)
+// ✅ Dual Mode (Stock-first — Instant redirect!)
 // ✅ 🔥 QUOTA OPTIMIZED:
-//    ├── COUNTER SYSTEM: Bill No = 1 read + 1 write (N reads khatam!)
-//    ├── BATCHED WRITES: bill + stock minus + movements + customer
-//    │   = EK ATOMIC OPERATION (fast + safe + efficient!)
-//    └── COMPACT MOVEMENTS: bill-level 1 doc (items array ke sath!)
+//    ├── COUNTER SYSTEM: Bill No = 1 read + 1 write
+//    ├── BATCHED WRITES: bill + stock + movements + customer
+//    └── COMPACT MOVEMENTS: bill-level doc (items array!)
+// ✅ 🆕 PREVIEW SYSTEM: Display pehle, increment SAVE par
+//    (No more skipped numbers — STK-1, STK-2, STK-3 sahi!)
+// ✅ 🆕 ROBUST buildBillHTML (Fallback — kabhi white page nahi!)
+// ✅ 🆕 Date/Time print par bhari hui!
 // ✅ Customer suggest + info + balance update
-// ✅ Stock suggest + available hint
 // ✅ Success Screen + Print/PDF/JPG/Share
-// ✅ Multi-tenant + permissions
 // ============================================
 
 const firebaseConfig = {
@@ -32,7 +33,7 @@ const db = firebase.firestore();
 let myUid = null;
 let myAgencyId = null;
 let myAgency = null;
-let myPermissions = { instant: false, stock: true }; // Instant ab OFF default (paid feature — freebills!)
+let myPermissions = { instant: false, stock: true, ntn: true };
 let currentMode = 'stock';
 let billNo = '';
 let allMyCustomers = [];
@@ -46,6 +47,55 @@ function UNIT_LBL(u) {
                 'box': 'Box', 'carton': 'Ctn', 'bottle': 'Btl', 'can': 'Can',
                 'meter': 'm', 'feet': 'ft', 'gallon': 'Gal', 'unit': '' };
     return m[u] || '';
+}
+
+// ============================================
+// 👀 PREVIEW: Counter padho, INCREMENT MAT karo!
+// (Bill kholte hi number dikhta hai — save par asli increment!)
+// ============================================
+async function previewBillNo(type) {
+    const prefix = (myAgency && myAgency.billPrefixes && myAgency.billPrefixes[type])
+        ? myAgency.billPrefixes[type]
+        : (type === 'instant' ? 'INS-' : 'STK-');
+
+    const counterRef = db.collection('counters').doc(myAgencyId + '_' + type);
+    try {
+        const cDoc = await counterRef.get();
+        const next = (cDoc.exists ? (cDoc.data().count || 0) : 0) + 1;
+        billNo = prefix + next;
+    } catch (e) {
+        billNo = prefix + '1';
+    }
+    document.getElementById('billNoDisplay').innerText = billNo;
+}
+
+// ============================================
+// 🔢 ASLI INCREMENT: Counter +1 (SAVE ke waqt!)
+// ============================================
+async function generateBillNo(type) {
+    const prefix = (myAgency && myAgency.billPrefixes && myAgency.billPrefixes[type])
+        ? myAgency.billPrefixes[type]
+        : (type === 'instant' ? 'INS-' : 'STK-');
+
+    const counterRef = db.collection('counters').doc(myAgencyId + '_' + type);
+
+    try {
+        const result = await db.runTransaction(async (tx) => {
+            const cDoc = await tx.get(counterRef);
+            const newCount = (cDoc.exists ? (cDoc.data().count || 0) : 0) + 1;
+            tx.set(counterRef, { count: newCount, type: type, updatedAt: new Date().toISOString() });
+            return newCount;
+        });
+
+        billNo = prefix + result;
+        document.getElementById('billNoDisplay').innerText = billNo;
+
+    } catch (e) {
+        console.error('Counter error:', e);
+        // Fallback: timestamp-based (unique!)
+        billNo = prefix + Date.now().toString().slice(-6);
+        document.getElementById('billNoDisplay').innerText = billNo;
+    }
 }
 
 // ============================================
@@ -79,7 +129,7 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
 
-        myPermissions = me.permissions || { instant: false, stock: true };
+        myPermissions = me.permissions || { instant: false, stock: true, ntn: true };
 
         try {
             const agDoc = await db.collection('agencies').doc(myAgencyId).get();
@@ -118,12 +168,12 @@ function setupModeTabs() {
     const tabS = document.getElementById('tabStock');
 
     // ⚡ INSTANT TAB — Free Bills redirect (paid app mein nahi!)
-    tabI.style.display = 'none'; // 🆕 Hidden — Instant freebills ka kaam hai!
+    tabI.style.display = 'none';
 
     if (!myPermissions.stock) {
         tabS.classList.add('disabled');
     } else {
-        tabS.classList.add('active'); // Stock default active!
+        tabS.classList.add('active');
     }
 
     tabS.addEventListener('click', () => {
@@ -135,7 +185,6 @@ function setupModeTabs() {
     });
 
     tabI.addEventListener('click', () => {
-        // 🆕 Instant dabao to Free Bills popup!
         Swal.fire({
             icon: 'info',
             title: '⚡ Instant Bill — FREE App Mein!',
@@ -150,7 +199,7 @@ function setupModeTabs() {
 }
 
 // ============================================
-// 🔄 MODE SWITCH
+// 🔄 MODE SWITCH (Preview number — increment NAHI!)
 // ============================================
 function switchMode(mode) {
     currentMode = mode;
@@ -168,43 +217,14 @@ function switchMode(mode) {
     document.getElementById('custInfoBox').classList.remove('show');
     document.getElementById('custInfoBox').innerHTML = '';
 
-    generateBillNo(mode);
+    // 👀 PREVIEW — counter increment NAHI hota!
+    previewBillNo(mode);
 
+    // NTN check (permissions ke mutabiq)
     const ntnWrap = document.querySelector('.ntn-wrap');
     if (ntnWrap) ntnWrap.style.display = myPermissions.ntn ? '' : 'none';
 
     calcTotals();
-}
-
-// ============================================
-// 🔢 BILL NO — 🔥 COUNTER SYSTEM (Quota Optimized!)
-// 1 READ (agency counter) + 1 WRITE (counter update)
-// — bills collection ki N reads KHATAM!
-// ============================================
-async function generateBillNo(type) {
-    const prefix = (myAgency && myAgency.billPrefixes && myAgency.billPrefixes[type])
-        ? myAgency.billPrefixes[type]
-        : (type === 'instant' ? 'INS-' : 'STK-');
-
-    const counterRef = db.collection('counters').doc(myAgencyId + '_' + type);
-
-    try {
-        const result = await db.runTransaction(async (tx) => {
-            const cDoc = await tx.get(counterRef);
-            const newCount = (cDoc.exists ? (cDoc.data().count || 0) : 0) + 1;
-            tx.set(counterRef, { count: newCount, type: type, updatedAt: new Date().toISOString() });
-            return newCount;
-        });
-
-        billNo = prefix + result;
-        document.getElementById('billNoDisplay').innerText = billNo;
-
-    } catch (e) {
-        console.error('Counter error:', e);
-        // Fallback: timestamp-based (unique to kabhi takrar nahi!)
-        billNo = prefix + Date.now().toString().slice(-6);
-        document.getElementById('billNoDisplay').innerText = billNo;
-    }
 }
 
 // ============================================
@@ -441,9 +461,8 @@ document.getElementById('sumDiscount').addEventListener('input', calcTotals);
 document.getElementById('sumReceived').addEventListener('input', calcTotals);
 
 // ============================================
-// 💾 SAVE BILL — 🔥 BATCHED WRITE (Quota Optimized!)
-// EK ATOMIC OPERATION: bill + stock minus + compact movements 
-// + customer balance — sab ek batch mein! (Fast + Safe!)
+// 💾 SAVE BILL — 🔥 BATCHED WRITE + ASLI INCREMENT!
+// Yahan ASLI counter increment hota hai (preview nahi!)
 // ============================================
 document.getElementById('saveBillBtn').addEventListener('click', async () => {
     const items = [];
@@ -474,7 +493,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
     const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
     const balance = (prevBal + grand) - received;
 
-    // 🆕 STOCK MODE VALIDATION: qty available se zyada to warning (permissive!)
+    // 🆕 STOCK VALIDATION (permissive — bill phir bhi banega!)
     if (currentMode === 'stock') {
         const lowStockWarnings = [];
         items.forEach(it => {
@@ -502,12 +521,11 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
     document.getElementById('saveBillBtn').disabled = true;
 
     try {
-        // 🔢 Counter se FRESH bill no (1 read + 1 write!)
+        // 🔢 ASLI INCREMENT — ab counter +1 hoga (preview tha pehle!)
         await generateBillNo(currentMode);
 
         // ============================================
         // 🔥 BATCHED WRITE — EK ATOMIC OPERATION!
-        // (Network trips kam, speed fast, data safe!)
         // ============================================
         const batch = db.batch();
 
@@ -521,7 +539,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             customerName: customerName,
             customerId: selectedCustomer ? selectedCustomer.id : null,
             customerMobile: selectedCustomer ? (selectedCustomer.mobile || '') : '',
-            items: items,                       // 🆕 Items ARRAY ke andar (alag docs nahi!)
+            items: items,
             itemCount: items.length,
             subTotal: subTotal,
             discount: discount,
@@ -535,10 +553,10 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         };
         batch.set(billRef, billData);
 
-        // 2️⃣ 📦 STOCK MINUS (har stock item — batch mein!)
+        // 2️⃣ 📦 STOCK MINUS + 3️⃣ COMPACT MOVEMENTS
         if (currentMode === 'stock') {
-            const movements = [];   // 🆕 COMPACT movements (bill doc ke sath array!)
-            
+            const movements = [];
+
             items.forEach(it => {
                 if (!it.stockId) return;
                 const s = allMyStock.find(x => x.id === it.stockId);
@@ -558,8 +576,6 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
                 });
             });
 
-            // 3️⃣ 📜 COMPACT MOVEMENT DOC (1 write — saari movements array mein!)
-            // (Pehle har item ka alag doc tha = 5 writes! Ab 1 write!)
             if (movements.length > 0) {
                 const moveRef = db.collection('movements').doc();
                 batch.set(moveRef, {
@@ -569,7 +585,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
                     type: 'out',
                     reason: 'sale',
                     reasonLabel: '🛒 Sale (Bill ' + billNo + ')',
-                    movements: movements,      // 🆕 items array ke sath!
+                    movements: movements,
                     totalMoved: movements.reduce((s, m) => s + m.qty, 0),
                     createdBy: myUid,
                     createdAt: new Date().toISOString()
@@ -586,18 +602,22 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             });
         }
 
-        // 🔥 COMMIT — SAB EK SATH! (Atomic — ya sab hoga, ya kuch nahi!)
+        // 🔥 COMMIT — SAB EK SATH!
         await batch.commit();
 
         // ✅ SUCCESS SCREEN
         lastSavedBill = { 
             billNo, customerName, items, subTotal, discount, grand, received, balance, prevBal,
+            date: billData.date,
+            time: billData.time,
             agencyCity: (myAgency && myAgency.city) || '',
-            agencyMobile: (myAgency && myAgency.mobile) || ''
+            agencyMobile: (myAgency && myAgency.mobile) || '',
+            agencyAddress: (myAgency && myAgency.address) || '',
+            agencyNTN: (myAgency && myAgency.ntn) || ''
         };
 
         document.querySelectorAll('.panel-container .panel-card').forEach((c, i) => {
-            if (i === 0) c.style.display = 'none'; // pehla card (tabs/billno)
+            if (i === 0) c.style.display = 'none';
         });
         document.getElementById('saveBillBtn').style.display = 'none';
         document.getElementById('successScreen').style.display = 'block';
@@ -618,7 +638,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
 });
 
 // ============================================
-// ✅ SUCCESS SCREEN — OUTPUT FUNCTIONS
+// ✅ SUCCESS SCREEN — NEW BILL BUTTON
 // ============================================
 document.getElementById('outNewBillBtn').addEventListener('click', () => {
     document.getElementById('successScreen').style.display = 'none';
@@ -634,39 +654,176 @@ document.getElementById('outNewBillBtn').addEventListener('click', () => {
 });
 
 // ============================================
-// 🎨 TEMPLATE SYSTEM (v1) — Agency ka chosen template!
-// 5 Templates: Urdu Classic, Traders English, Urdu+English,
-// Modern Minimal, Premium Full — bill-templates.js se!
+// 🎨 BUILD BILL HTML — ROBUST (Template + Fallback!)
+// Template fail ho to FALLBACK bill — kabhi white page nahi!
 // ============================================
 function buildBillHTML(bill) {
-    return renderBillTemplate(bill);
+    if (typeof renderBillTemplate === 'function' &&
+        typeof BILL_TEMPLATES !== 'undefined') {
+        try {
+            return renderBillTemplate(bill);
+        } catch (e) {
+            console.error('⚠️ Template render fail — fallback:', e);
+        }
+    }
+    return buildFallbackBillHTML(bill);
 }
-// 🖨️ PRINT
+
+// ============================================
+// 🛡️ FALLBACK BILL (Hamesha kaam karega!)
+// ============================================
+function buildFallbackBillHTML(bill) {
+    const bizName = (myAgency && myAgency.name) || 'Easy Bill Generator';
+    const bizMobile = (myAgency && myAgency.mobile) || '';
+    const bizCity = (myAgency && myAgency.city) || '';
+    const bizNTN = (myAgency && myAgency.ntn) || '';
+    const bizAddress = (myAgency && myAgency.address) || '';
+
+    let billDate = bill.date || '';
+    let billTime = bill.time || '';
+    if (!billDate) {
+        const now = new Date();
+        billDate = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
+    }
+    if (!billTime) {
+        billTime = new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    const custName = bill.customerName || 'Counter Sale';
+    const custMobile = bill.customerMobile || '';
+
+    return `
+    <html>
+    <head>
+        <title>Bill ${bill.billNo}</title>
+        <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; max-width: 650px; margin: auto; color: #333; }
+            .biz-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 12px; margin-bottom: 15px; }
+            .biz-header h1 { margin: 0; font-size: 28px; color: #2c3e50; }
+            .biz-header p { margin: 3px 0; font-size: 13px; color: #555; }
+            .bill-meta { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
+            .bill-meta div { line-height: 1.7; }
+            .cust-box { background: #f8f9fa; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; line-height: 1.7; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
+            th { background: #f0f0f0; text-align: center; }
+            td.qty, td.rate, td.total { text-align: right; }
+            .totals { margin-top: 12px; max-width: 320px; margin-left: auto; }
+            .totals div { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; }
+            .totals .grand { border-top: 2px solid #333; font-weight: bold; font-size: 15px; }
+            .totals .bal { color: #c0392b; font-weight: bold; }
+            .sig-area { margin-top: 45px; text-align: right; }
+            .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
+            .footer-note { text-align: center; font-size: 10px; color: #888; margin-top: 25px; font-style: italic; }
+            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+        </style>
+    </head>
+    <body>
+        <div class="biz-header">
+            <h1>${bizName}</h1>
+            ${bizAddress ? `<p>📍 ${bizAddress}</p>` : ''}
+            ${bizMobile ? `<p>📱 ${bizMobile}</p>` : ''}
+            ${bizCity ? `<p>🏙️ ${bizCity}</p>` : ''}
+            ${bizNTN ? `<p>🔢 NTN: ${bizNTN}</p>` : ''}
+        </div>
+        
+        <div class="bill-meta">
+            <div>
+                <b>Bill No:</b> ${bill.billNo}<br>
+                <b>Date:</b> ${billDate}<br>
+                <b>Time:</b> ${billTime}
+            </div>
+        </div>
+
+        <div class="cust-box">
+            <b>👤 Customer:</b> ${custName}<br>
+            ${custMobile ? `📱 ${custMobile}` : ''}
+        </div>
+
+        <table>
+            <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
+            ${(bill.items || []).map((it, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${it.name}</td>
+                    <td class="qty">${it.qty}</td>
+                    <td class="rate">Rs ${it.rate}</td>
+                    <td class="total">Rs ${(it.total || 0).toFixed(2)}</td>
+                </tr>`).join('')}
+        </table>
+
+        <div class="totals">
+            <div><span>Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
+            <div><span>Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
+            <div class="grand"><span>Grand Total:</span><span>Rs ${(bill.grandTotal || 0).toFixed(2)}</span></div>
+            <div><span>Previous Balance:</span><span>Rs ${(bill.previousBalance || 0).toFixed(2)}</span></div>
+            <div><span>Received:</span><span>- Rs ${(bill.received || 0).toFixed(2)}</span></div>
+            <div class="bal"><span>TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
+        </div>
+
+        <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
+        
+        <div class="sig-area">
+            <div class="sig-line">Authorized Signature</div>
+        </div>
+
+        <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
+    </body>
+    </html>
+    `;
+}
+
+// ============================================
+// 🖨️ PRINT (Try-catch + 1500ms — font load ke liye!)
+// ============================================
 document.getElementById('outPrintBtn').addEventListener('click', () => {
     if (!lastSavedBill) return;
+    
+    let billHTML = '';
+    try {
+        billHTML = buildBillHTML(lastSavedBill);
+    } catch (e) {
+        console.error('Bill HTML fail:', e);
+        Swal.fire('❌ Error', 'Bill bana nahi ja saka: ' + e.message, 'error');
+        return;
+    }
+
     const win = window.open('', '_blank', 'width=800,height=600');
-    win.document.write(buildBillHTML(lastSavedBill));
+    win.document.write(billHTML);
     win.document.close();
-    setTimeout(() => win.print(), 500);
+    setTimeout(() => win.print(), 1500);
 });
 
+// ============================================
 // 📄 PDF
+// ============================================
 document.getElementById('outPdfBtn').addEventListener('click', () => {
     if (!lastSavedBill) return;
+
+    let billHTML = '';
+    try {
+        billHTML = buildBillHTML(lastSavedBill);
+    } catch (e) {
+        Swal.fire('❌ Error', 'Bill bana nahi ja saka!', 'error');
+        return;
+    }
+
     const win = window.open('', '_blank', 'width=800,height=600');
-    win.document.write(buildBillHTML(lastSavedBill));
+    win.document.write(billHTML);
     win.document.close();
     setTimeout(() => {
         win.print();
         Swal.fire({
             toast: true, position: 'top-end', showConfirmButton: false,
             timer: 3000, icon: 'info',
-            title: '📄 Print dialog mein "Save as PDF" select karein!'
+            title: '📄 "Save as PDF" select karein!'
         });
-    }, 500);
+    }, 1500);
 });
 
-// 🖼️ JPG
+// ============================================
+// 🖼️ JPG (Style extraction ke sath!)
+// ============================================
 document.getElementById('outJpgBtn').addEventListener('click', async () => {
     if (!lastSavedBill) return;
 
@@ -677,31 +834,41 @@ document.getElementById('outJpgBtn').addEventListener('click', async () => {
         holder.style.cssText = 'position:absolute; left:-10000px; top:0; width:600px; background:#fff;';
         document.body.appendChild(holder);
     }
-    holder.innerHTML = buildBillHTML(lastSavedBill)
-        .replace('<html>', '<div>').replace('</html>', '</div>')
-        .replace('<head>', '').replace('</head>', '')
-        .replace(/<style>[\s\S]*?<\/style>/, '')
-        .replace('<body>', '').replace('</body>', '');
+
+    // 🆕 Style EXTRACT (hatana nahi — JPG par formatting ke liye!)
+    const fullHTML = buildBillHTML(lastSavedBill);
+    const bodyStart = fullHTML.indexOf('<body>') + 6;
+    const bodyEnd = fullHTML.indexOf('</body>');
+    const bodyContent = fullHTML.substring(bodyStart, bodyEnd);
+    const styleMatch = fullHTML.match(/<style>([\s\S]*?)<\/style>/);
+    const styles = styleMatch ? styleMatch[1] : '';
+    
+    holder.innerHTML = `<style>${styles}</style><div style="padding:25px;">${bodyContent}</div>`;
 
     try {
         const canvas = await html2canvas(holder, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        holder.innerHTML = '';
+        
         const link = document.createElement('a');
         link.download = `Bill_${lastSavedBill.billNo}.jpg`;
         link.href = canvas.toDataURL('image/jpeg', 0.95);
         link.click();
-        
+
         Swal.fire({
             toast: true, position: 'top-end', showConfirmButton: false,
             timer: 2000, icon: 'success',
             title: '🖼️ JPG downloaded!'
         });
     } catch (e) {
+        holder.innerHTML = '';
         console.error(e);
         Swal.fire('❌ Error', 'JPG fail hua!', 'error');
     }
 });
 
+// ============================================
 // 📤 SHARE (WhatsApp — JPG + text!)
+// ============================================
 document.getElementById('outShareBtn').addEventListener('click', async () => {
     if (!lastSavedBill) return;
     const b = lastSavedBill;
@@ -726,13 +893,18 @@ document.getElementById('outShareBtn').addEventListener('click', async () => {
                 holder.style.cssText = 'position:absolute; left:-10000px; top:0; width:600px; background:#fff;';
                 document.body.appendChild(holder);
             }
-            holder.innerHTML = buildBillHTML(b)
-                .replace('<html>', '<div>').replace('</html>', '</div>')
-                .replace('<head>', '').replace('</head>', '')
-                .replace(/<style>[\s\S]*?<\/style>/, '')
-                .replace('<body>', '').replace('</body>', '');
+
+            const fullHTML = buildBillHTML(b);
+            const bodyStart = fullHTML.indexOf('<body>') + 6;
+            const bodyEnd = fullHTML.indexOf('</body>');
+            const bodyContent = fullHTML.substring(bodyStart, bodyEnd);
+            const styleMatch = fullHTML.match(/<style>([\s\S]*?)<\/style>/);
+            const styles = styleMatch ? styleMatch[1] : '';
+            holder.innerHTML = `<style>${styles}</style><div style="padding:25px;">${bodyContent}</div>`;
 
             const canvas = await html2canvas(holder, { scale: 2, backgroundColor: '#ffffff' });
+            holder.innerHTML = '';
+            
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
             const file = new File([blob], `Bill_${b.billNo}.jpg`, { type: 'image/jpeg' });
 
