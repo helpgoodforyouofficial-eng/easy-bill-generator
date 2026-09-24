@@ -64,7 +64,7 @@
         </form>
     </div>
 
-    <!-- ===== 🏢 BUSINESS INFO (Sirf OWNER ke liye!) ===== -->
+   <!-- ===== 🏢 BUSINESS INFO (Sirf OWNER ke liye!) ===== -->
     <div class="panel-card" id="businessCard" style="display:none;">
         <div class="card-header">
             <h2><i class="fas fa-building"></i> My Business / Agency</h2>
@@ -111,9 +111,31 @@
                     <input type="text" id="pfBizCity" maxlength="30" placeholder="City">
                 </div>
             </div>
-            <div class="form-group">
-                <label>📍 Business Address (optional)</label>
-                <input type="text" id="pfBizAddress" maxlength="100" placeholder="Street, Area, City">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📍 Business Address (optional)</label>
+                    <input type="text" id="pfBizAddress" maxlength="100" placeholder="Street, Area, City">
+                </div>
+                <div class="form-group">
+                    <label>🔢 NTN Number (optional)</label>
+                    <input type="text" id="pfBizNTN" maxlength="20" placeholder="1234567-8">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📋 Registration No (optional)</label>
+                    <input type="text" id="pfBizReg" maxlength="30" placeholder="Reg No">
+                </div>
+                <div class="form-group">
+                    <label>🎨 My Bill Template (Print design!)</label>
+                    <select id="pfTemplate" class="select-input">
+                        <option value="template4">⚡ Modern Minimal (Default)</option>
+                        <option value="template1">🇵🇰 Urdu Classic</option>
+                        <option value="template2">📋 Traders English</option>
+                        <option value="template3">🇵🇰 Urdu + English Mix</option>
+                        <option value="template5">💎 Premium Full</option>
+                    </select>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary" id="saveBizBtn">
                 💾 Save Business Info
