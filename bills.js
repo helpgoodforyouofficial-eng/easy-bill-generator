@@ -876,7 +876,7 @@ function buildFallbackBillHTML(bill) {
             </div>
             <div class="ag-details">
                 <div class="ag-name">${bizName}</div>
-                ${ag.address ? `<div class="ag-address"> add: ${ag.address}</div>` : ''}
+                ${ag.address ? `<div class="ag-address"> Address: ${ag.address}</div>` : ''}
                 ${mobilesLine ? `<div class="ag-mobiles">${mobilesLine}</div>` : ''}
                                 ${(ag.ntn || ag.licenceNo) ? `<div class="ag-ntn-line">NTN: ${ag.ntn || '—'}${ag.licenceNo ? ` | Licence: ${ag.licenceNo}` : ''}</div>` : ''}
             </div>
