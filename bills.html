@@ -14,16 +14,38 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- 🆕 HTML2CANVAS (JPG banane ke liye — ZAROORI!) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <!-- Panels CSS -->
     <link rel="stylesheet" href="panels.css">
 
     <!-- Bills CSS -->
     <link rel="stylesheet" href="bills.css">
 
-    <!-- 🆕 Z-INDEX FIX -->
+    <!-- 🆕 Z-INDEX FIX + TAX ROW STYLES -->
     <style>
         .swal2-container { z-index: 999999 !important; }
         .suggest-box { z-index: 99999; }
+        .total-row .tax-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .total-row .tax-inline input[type="checkbox"] {
+            width: 16px; height: 16px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .total-row .tax-inline input[type="number"] {
+            width: 60px; padding: 5px;
+            border: 1px solid #ddd; border-radius: 6px;
+            text-align: right;
+        }
+        .total-row .tax-inline label {
+            font-weight: bold; color: #856404;
+            margin: 0; font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -34,7 +56,7 @@
         <div class="logo-mini">🧾</div>
         <div>
             <div class="brand-name">New Bill</div>
-            <div class="brand-sub" id="modeLabel">⚡ Instant Mode</div>
+            <div class="brand-sub" id="modeLabel">📦 Stock Mode</div>
         </div>
     </div>
     <div class="top-actions">
@@ -76,7 +98,7 @@
             <i class="fas fa-plus"></i> Add Item Row
         </button>
 
-        <!-- 💰 TOTALS -->
+        <!-- 💰 TOTALS (Tax row included!) -->
         <div class="totals-box" style="margin-top:15px;">
             <div class="total-row">
                 <span>Sub Total:</span>
@@ -86,6 +108,15 @@
                 <span>Discount:</span>
                 <input type="number" id="sumDiscount" value="0" min="0" step="0.01"
                        style="width:90px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:right;">
+            </div>
+            <!-- 🆕 TAX ROW (checkbox + rate) -->
+            <div class="total-row">
+                <span class="tax-inline">
+                    <input type="checkbox" id="taxEnabled">
+                    <label for="taxEnabled">Tax %:</label>
+                    <input type="number" id="taxRate" value="0" min="0" step="0.01">
+                </span>
+                <span>+ Rs <span id="sumTax">0.00</span></span>
             </div>
             <div class="total-row grand">
                 <span>Grand Total:</span>
