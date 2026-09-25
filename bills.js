@@ -698,15 +698,25 @@ function buildBillHTML(bill) {
 }
 
 // ============================================
-// 🛡️ FALLBACK BILL (Hamesha kaam karega!)
+// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v2)
+// ✅ Logo (left, agar ho) + Naam + Address
+// ✅ 3 Mobiles EK line mein
+// ✅ NTN + Licence (conditional — bhara ho to show!)
+// ✅ CASH/CREDIT (right top — bold!)
+// ✅ Customer box: Naam + Mobile + Address (wrap!)
+// ✅ Totals: Labels + Amounts SAATH!
+// ✅ Tax row (agar bill mein tax ho!)
 // ============================================
 function buildFallbackBillHTML(bill) {
-    const bizName = (myAgency && myAgency.name) || 'Easy Bill Generator';
-    const bizMobile = (myAgency && myAgency.mobile) || '';
-    const bizCity = (myAgency && myAgency.city) || '';
-    const bizNTN = (myAgency && myAgency.ntn) || '';
-    const bizAddress = (myAgency && myAgency.address) || '';
+    const ag = myAgency || {};
+    const bizName = ag.name || 'Easy Bill Generator';
+    const payType = bill.payType || ag.payType || 'CASH';
 
+    // 📱 Saare mobiles (jo bhare hon — EK line mein!)
+    const mobiles = [ag.mobile, ag.mobile2, ag.mobile3].filter(m => m && m.trim());
+    const mobilesLine = mobiles.map(m => `📱 ${m}`).join(' &nbsp; ');
+
+    // Date/Time fallback
     let billDate = bill.date || '';
     let billTime = bill.time || '';
     if (!billDate) {
@@ -719,53 +729,181 @@ function buildFallbackBillHTML(bill) {
 
     const custName = bill.customerName || 'Counter Sale';
     const custMobile = bill.customerMobile || '';
+    const custAddress = (bill.customerAddress || (selectedCustomer && selectedCustomer.address)) || '';
+
+    // 🆕 Tax row (agar bill mein tax ho!)
+    const taxRow = (bill.taxAmount && bill.taxAmount > 0)
+        ? `<div><span class="label">Tax (${bill.taxRate || 0}%):</span><span>+ Rs ${bill.taxAmount.toFixed(2)}</span></div>`
+        : '';
 
     return `
     <html>
     <head>
         <title>Bill ${bill.billNo}</title>
         <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; max-width: 650px; margin: auto; color: #333; }
-            .biz-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 12px; margin-bottom: 15px; }
-            .biz-header h1 { margin: 0; font-size: 28px; color: #2c3e50; }
-            .biz-header p { margin: 3px 0; font-size: 13px; color: #555; }
-            .bill-meta { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-            .bill-meta div { line-height: 1.7; }
-            .cust-box { background: #f8f9fa; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; line-height: 1.7; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 700px; margin: auto; color: #222; }
+            
+            /* 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) */
+            .ag-header {
+                display: flex;
+                align-items: flex-start;
+                border-bottom: 3px double #333;
+                padding-bottom: 10px;
+                margin-bottom: 12px;
+            }
+            .ag-logo {
+                width: 80px; min-height: 70px;
+                flex: 0 0 80px;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .ag-logo img { max-width: 80px; max-height: 70px; }
+            .ag-logo .logo-space { width: 80px; }
+            .ag-details { flex: 1; text-align: left; padding: 0 10px; }
+            .ag-name {
+                font-size: 24px;
+                font-weight: 900;
+                color: #1a1a1a;
+                margin-bottom: 4px;
+                letter-spacing: 0.5px;
+            }
+            .ag-address { font-size: 13px; color: #444; margin-bottom: 4px; }
+            .ag-mobiles { font-size: 13px; color: #444; }
+            .ag-mobiles span { margin-right: 12px; }
+            .ag-ntn-line { font-size: 13px; color: #333; font-weight: bold; margin-top: 4px; }
+            .ag-lic-line { font-size: 13px; color: #333; margin-top: 2px; }
+            
+            /* 💳 PAY TYPE (right top — bold!) */
+            .pay-type {
+                flex: 0 0 auto;
+                font-size: 26px;
+                font-weight: 900;
+                color: #1a1a1a;
+                letter-spacing: 3px;
+                align-self: center;
+            }
+
+            /* 🧾 BILL META (right side — stacked!) */
+            .bill-meta-box {
+                display: flex;
+                justify-content: flex-end;
+                margin-bottom: 10px;
+            }
+            .bill-meta-inner {
+                font-size: 13px;
+                line-height: 1.8;
+                min-width: 260px;
+            }
+            .bill-meta-inner b { color: #2c3e50; }
+            
+            /* 👤 CUSTOMER BOX */
+            .cust-box {
+                background: #f8f9fa;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 10px 14px;
+                margin-bottom: 12px;
+                font-size: 13px;
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .cust-left { flex: 1; min-width: 200px; line-height: 1.8; }
+            .cust-right {
+                flex: 0 0 auto;
+                text-align: right;
+                line-height: 1.8;
+                font-size: 12px;
+                color: #444;
+                border-left: 1px dashed #bbb;
+                padding-left: 15px;
+            }
+            .cust-name-big { font-size: 15px; font-weight: bold; color: #1a1a1a; }
+            .cust-addr { color: #444; word-wrap: break-word; max-width: 320px; display: inline; }
+            .cust-label { font-size: 11px; color: #7f8c8d; font-weight: bold; }
+            
+            /* 📋 ITEMS TABLE */
             table { width: 100%; border-collapse: collapse; margin: 10px 0; }
             th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
             th { background: #f0f0f0; text-align: center; }
             td.qty, td.rate, td.total { text-align: right; }
-            .totals { margin-top: 12px; max-width: 320px; margin-left: auto; }
-            .totals div { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; }
-            .totals .grand { border-top: 2px solid #333; font-weight: bold; font-size: 15px; }
-            .totals .bal { color: #c0392b; font-weight: bold; }
-            .sig-area { margin-top: 45px; text-align: right; }
+            
+            /* 💰 TOTALS (labels + amounts SAATH — right block!) */
+            .totals {
+                margin-top: 12px;
+                max-width: 340px;
+                margin-left: auto;
+                background: #fafbfc;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 8px 15px;
+            }
+            .totals div {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 5px 0;
+                font-size: 14px;
+            }
+            .totals .label { color: #555; }
+            .totals .grand {
+                border-top: 2px solid #333;
+                font-weight: bold;
+                font-size: 15px;
+                color: #1a1a1a;
+            }
+            .totals .bal {
+                color: #c0392b;
+                font-weight: bold;
+                background: #fff3f3;
+                border-radius: 6px;
+                padding: 4px 8px;
+            }
+            
+            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; font-size: 14px; }
+            .sig-area { margin-top: 40px; text-align: right; }
             .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
             .footer-note { text-align: center; font-size: 10px; color: #888; margin-top: 25px; font-style: italic; }
-            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
         </style>
     </head>
     <body>
-        <div class="biz-header">
-            <h1>${bizName}</h1>
-            ${bizAddress ? `<p>📍 ${bizAddress}</p>` : ''}
-            ${bizMobile ? `<p>📱 ${bizMobile}</p>` : ''}
-            ${bizCity ? `<p>🏙️ ${bizCity}</p>` : ''}
-            ${bizNTN ? `<p>🔢 NTN: ${bizNTN}</p>` : ''}
+        <!-- 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) -->
+        <div class="ag-header">
+            <div class="ag-logo">
+                ${(ag.logoBase64) 
+                    ? `<img src="${ag.logoBase64}">` 
+                    : `<div class="logo-space"></div>`}
+            </div>
+            <div class="ag-details">
+                <div class="ag-name">${bizName}</div>
+                ${ag.address ? `<div class="ag-address">📍 ${ag.address}</div>` : ''}
+                ${mobilesLine ? `<div class="ag-mobiles">${mobilesLine}</div>` : ''}
+                ${ag.ntn ? `<div class="ag-ntn-line">🔢 NTN: ${ag.ntn}</div>` : ''}
+                ${ag.licenceNo ? `<div class="ag-lic-line">📋 Licence: ${ag.licenceNo}</div>` : ''}
+            </div>
+            <div class="pay-type">${payType}</div>
         </div>
-        
-        <div class="bill-meta">
-            <div>
-                <b>Bill No:</b> ${bill.billNo}<br>
-                <b>Date:</b> ${billDate}<br>
-                <b>Time:</b> ${billTime}
+
+        <!-- 🧾 BILL META (right side stacked) -->
+        <div class="bill-meta-box">
+            <div class="bill-meta-inner">
+                <b>🧾 Bill No:</b> ${bill.billNo}<br>
+                <b>📅 Date:</b> ${billDate}<br>
+                <b>🕐 Time:</b> ${billTime}
             </div>
         </div>
 
+        <!-- 👤 CUSTOMER BOX (left details + right meta!) -->
         <div class="cust-box">
-            <b>👤 Customer:</b> ${custName}<br>
-            ${custMobile ? `📱 ${custMobile}` : ''}
+            <div class="cust-left">
+                <span class="cust-label">👤 Customer:</span>
+                <span class="cust-name-big"> ${custName}</span>
+                ${custMobile ? `<span> &nbsp; 📱 ${custMobile}</span>` : ''}
+                ${custAddress ? `<br><span class="cust-label">📍 Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
+            </div>
+            <div class="cust-right">
+                ${bill.customerNTN ? `🔢 NTN: ${bill.customerNTN}<br>` : ''}
+            </div>
         </div>
 
         <table>
@@ -780,13 +918,15 @@ function buildFallbackBillHTML(bill) {
                 </tr>`).join('')}
         </table>
 
+        <!-- 💰 TOTALS (labels + amounts saath!) -->
         <div class="totals">
-            <div><span>Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
-            <div><span>Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
-            <div class="grand"><span>Grand Total:</span><span>Rs ${(bill.grandTotal || 0).toFixed(2)}</span></div>
-            <div><span>Previous Balance:</span><span>Rs ${(bill.previousBalance || 0).toFixed(2)}</span></div>
-            <div><span>Received:</span><span>- Rs ${(bill.received || 0).toFixed(2)}</span></div>
-            <div class="bal"><span>TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
+            <div><span class="label">Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
+            <div><span class="label">Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
+            ${taxRow}
+            <div class="grand"><span class="label">Grand Total:</span><span>Rs ${(bill.grandTotal || 0).toFixed(2)}</span></div>
+            <div><span class="label">Previous Balance:</span><span>Rs ${(bill.previousBalance || 0).toFixed(2)}</span></div>
+            <div><span class="label">Received:</span><span>- Rs ${(bill.received || 0).toFixed(2)}</span></div>
+            <div class="bal"><span class="label">TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
         </div>
 
         <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
