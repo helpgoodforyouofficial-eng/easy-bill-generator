@@ -563,6 +563,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             customerName: customerName,
             customerId: selectedCustomer ? selectedCustomer.id : null,
             customerMobile: selectedCustomer ? (selectedCustomer.mobile || '') : '',
+            customerNTN: selectedCustomer ? (selectedCustomer.ntn || '') : '',   // 🆕
             items: items,
             itemCount: items.length,
             subTotal: subTotal,
@@ -783,15 +784,19 @@ function buildFallbackBillHTML(bill) {
             }
 
             /* 🧾 BILL META (right side — stacked!) */
-            .bill-meta-box {
+                        .bill-meta-box {
                 display: flex;
                 justify-content: flex-end;
-                margin-bottom: 10px;
+                margin-bottom: 12px;
             }
             .bill-meta-inner {
+                background: #f8f9fa;              /* 🆕 Customer box jaisa grey! */
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 10px 14px;
                 font-size: 13px;
-                line-height: 1.8;
-                min-width: 260px;
+                line-height: 1.9;
+                min-width: 220px;
             }
             .bill-meta-inner b { color: #2c3e50; }
             
@@ -893,15 +898,13 @@ function buildFallbackBillHTML(bill) {
         
 
         <!-- 👤 CUSTOMER BOX (left details + right meta!) -->
-        <div class="cust-box">
+                <div class="cust-box">
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
                 <span class="cust-name-big"> ${custName}</span>
-                ${custMobile ? `<span> &nbsp;  ${custMobile}</span>` : ''}
-                ${custAddress ? `<br><span class="cust-label"> Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
-            </div>
-            <div class="cust-right">
-                ${bill.customerNTN ? ` NTN: ${bill.customerNTN}<br>` : ''}
+                ${custMobile ? `<span> &nbsp; 📱 ${custMobile}</span>` : ''}
+                ${custAddress ? `<br><span class="cust-label">📍 Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
+                ${bill.customerNTN ? `<br><span class="cust-label">🔢 NTN:</span> <span class="dim-value"> ${bill.customerNTN}</span>` : ''}
             </div>
         </div>
 
