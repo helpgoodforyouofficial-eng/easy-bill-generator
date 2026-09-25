@@ -101,14 +101,18 @@
                     </select>
                 </div>
             </div>
-            <div class="form-row">
+                        <div class="form-row">
                 <div class="form-group">
-                    <label>📱 Business Mobile</label>
+                    <label>📱 Mobile 1 *</label>
                     <input type="tel" id="pfBizMobile" maxlength="15" placeholder="03xx-xxxxxxx">
                 </div>
                 <div class="form-group">
-                    <label>🏙️ City</label>
-                    <input type="text" id="pfBizCity" maxlength="30" placeholder="City">
+                    <label>📱 Mobile 2 (optional)</label>
+                    <input type="tel" id="pfBizMobile2" maxlength="15" placeholder="03xx-xxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label>📱 Mobile 3 (optional)</label>
+                    <input type="tel" id="pfBizMobile3" maxlength="15" placeholder="03xx-xxxxxxx">
                 </div>
             </div>
             <div class="form-row">
@@ -117,17 +121,30 @@
                     <input type="text" id="pfBizAddress" maxlength="100" placeholder="Street, Area, City">
                 </div>
                 <div class="form-group">
-                    <label>🔢 NTN Number (optional)</label>
+                    <label>🔢 NTN Number (optional — likha to bill par show)</label>
                     <input type="text" id="pfBizNTN" maxlength="20" placeholder="1234567-8">
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>📋 Registration No (optional)</label>
-                    <input type="text" id="pfBizReg" maxlength="30" placeholder="Reg No">
+                    <label>📋 Licence No (optional — likha to bill par show)</label>
+                    <input type="text" id="pfBizLic" maxlength="30" placeholder="Licence No">
                 </div>
                 <div class="form-group">
-                    <label>🎨 My Bill Template (Print design!)</label>
+                    <label>🖼️ Agency Logo (optional — bill left side)</label>
+                    <input type="file" id="pfBizLogo" accept="image/*" style="padding:8px;">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💳 Pay Type Default (CASH / CREDIT)</label>
+                    <select id="pfPayType" class="select-input">
+                        <option value="CASH">💵 CASH</option>
+                        <option value="CREDIT">💳 CREDIT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>🎨 My Bill Template</label>
                     <select id="pfTemplate" class="select-input">
                         <option value="template4">⚡ Modern Minimal (Default)</option>
                         <option value="template1">🇵🇰 Urdu Classic</option>
@@ -484,6 +501,6 @@
 
 <!-- 🧭 SIDEBAR SYSTEM -->
 <script src="sidebar.js"></script>
-    
+
 </body>
 </html>
