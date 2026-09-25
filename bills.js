@@ -876,10 +876,10 @@ function buildFallbackBillHTML(bill) {
             </div>
             <div class="ag-details">
                 <div class="ag-name">${bizName}</div>
-                ${ag.address ? `<div class="ag-address">📍 ${ag.address}</div>` : ''}
+                ${ag.address ? `<div class="ag-address"> add: ${ag.address}</div>` : ''}
                 ${mobilesLine ? `<div class="ag-mobiles">${mobilesLine}</div>` : ''}
-                ${ag.ntn ? `<div class="ag-ntn-line">🔢 NTN: ${ag.ntn}</div>` : ''}
-                ${ag.licenceNo ? `<div class="ag-lic-line">📋 Licence: ${ag.licenceNo}</div>` : ''}
+                ${ag.ntn ? `<div class="ag-ntn-line"> NTN: ${ag.ntn}</div>` : ''}
+                ${ag.licenceNo ? `<div class="ag-lic-line"> Licence: ${ag.licenceNo}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
@@ -887,9 +887,9 @@ function buildFallbackBillHTML(bill) {
         <!-- 🧾 BILL META (right side stacked) -->
         <div class="bill-meta-box">
             <div class="bill-meta-inner">
-                <b>🧾 Bill No:</b> ${bill.billNo}<br>
-                <b>📅 Date:</b> ${billDate}<br>
-                <b>🕐 Time:</b> ${billTime}
+                <b> Bill No:</b> ${bill.billNo}<br>
+                <b> Date:</b> ${billDate}<br>
+                <b> Time:</b> ${billTime}
             </div>
         </div>
 
@@ -898,11 +898,11 @@ function buildFallbackBillHTML(bill) {
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
                 <span class="cust-name-big"> ${custName}</span>
-                ${custMobile ? `<span> &nbsp; 📱 ${custMobile}</span>` : ''}
-                ${custAddress ? `<br><span class="cust-label">📍 Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
+                ${custMobile ? `<span> &nbsp;  ${custMobile}</span>` : ''}
+                ${custAddress ? `<br><span class="cust-label"> Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
             </div>
             <div class="cust-right">
-                ${bill.customerNTN ? `🔢 NTN: ${bill.customerNTN}<br>` : ''}
+                ${bill.customerNTN ? ` NTN: ${bill.customerNTN}<br>` : ''}
             </div>
         </div>
 
