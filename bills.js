@@ -1,14 +1,15 @@
 // ============================================
-// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, v3 FINAL!)
+// 🧾 EASY BILL GENERATOR — BILLS (Phase 4, v4 FINAL!)
 // ✅ Dual Mode (Stock-first — Instant redirect!)
 // ✅ 🔥 QUOTA OPTIMIZED:
 //    ├── COUNTER SYSTEM: Bill No = 1 read + 1 write
 //    ├── BATCHED WRITES: bill + stock + movements + customer
 //    └── COMPACT MOVEMENTS: bill-level doc (items array!)
-// ✅ 🆕 PREVIEW SYSTEM: Display pehle, increment SAVE par
+// ✅ PREVIEW SYSTEM: Display pehle, increment SAVE par
 //    (No more skipped numbers — STK-1, STK-2, STK-3 sahi!)
 // ✅ 🆕 ROBUST buildBillHTML (Fallback — kabhi white page nahi!)
 // ✅ 🆕 Date/Time print par bhari hui!
+// ✅ 🆕 JPG/Share — STYLE EXTRACT (formatted images!)
 // ✅ Customer suggest + info + balance update
 // ✅ Success Screen + Print/PDF/JPG/Share
 // ============================================
@@ -822,7 +823,7 @@ document.getElementById('outPdfBtn').addEventListener('click', () => {
 });
 
 // ============================================
-// 🖼️ JPG (Style extraction ke sath!)
+// 🖼️ JPG (🆕 Style EXTRACT — formatted image!)
 // ============================================
 document.getElementById('outJpgBtn').addEventListener('click', async () => {
     if (!lastSavedBill) return;
@@ -835,7 +836,7 @@ document.getElementById('outJpgBtn').addEventListener('click', async () => {
         document.body.appendChild(holder);
     }
 
-    // 🆕 Style EXTRACT (hatana nahi — JPG par formatting ke liye!)
+    // 🆕 STYLE EXTRACT — poora HTML lo, body content + styles alag karo
     const fullHTML = buildBillHTML(lastSavedBill);
     const bodyStart = fullHTML.indexOf('<body>') + 6;
     const bodyEnd = fullHTML.indexOf('</body>');
@@ -867,7 +868,7 @@ document.getElementById('outJpgBtn').addEventListener('click', async () => {
 });
 
 // ============================================
-// 📤 SHARE (WhatsApp — JPG + text!)
+// 📤 SHARE (🆕 Style EXTRACT — formatted image + text!)
 // ============================================
 document.getElementById('outShareBtn').addEventListener('click', async () => {
     if (!lastSavedBill) return;
@@ -894,6 +895,7 @@ document.getElementById('outShareBtn').addEventListener('click', async () => {
                 document.body.appendChild(holder);
             }
 
+            // 🆕 STYLE EXTRACT (same as JPG!)
             const fullHTML = buildBillHTML(b);
             const bodyStart = fullHTML.indexOf('<body>') + 6;
             const bodyEnd = fullHTML.indexOf('</body>');
