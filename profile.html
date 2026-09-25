@@ -10,7 +10,7 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Panels CSS (same theme) -->
+    <!-- Panels CSS -->
     <link rel="stylesheet" href="panels.css">
 </head>
 <body>
@@ -50,7 +50,7 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>📧 Email (fixed — change nahi hota)</label>
+                    <label>📧 Email (fixed)</label>
                     <input type="email" id="pfEmail" disabled style="background:#eef2f7; color:#7f8c8d;">
                 </div>
                 <div class="form-group">
@@ -64,7 +64,7 @@
         </form>
     </div>
 
-   <!-- ===== 🏢 BUSINESS INFO (Sirf OWNER ke liye!) ===== -->
+    <!-- ===== 🏢 BUSINESS INFO (Sirf OWNER ke liye!) ===== -->
     <div class="panel-card" id="businessCard" style="display:none;">
         <div class="card-header">
             <h2><i class="fas fa-building"></i> My Business / Agency</h2>
@@ -101,7 +101,7 @@
                     </select>
                 </div>
             </div>
-                        <div class="form-row">
+            <div class="form-row">
                 <div class="form-group">
                     <label>📱 Mobile 1 *</label>
                     <input type="tel" id="pfBizMobile" maxlength="15" placeholder="03xx-xxxxxxx">
@@ -121,21 +121,26 @@
                     <input type="text" id="pfBizAddress" maxlength="100" placeholder="Street, Area, City">
                 </div>
                 <div class="form-group">
-                    <label>🔢 NTN Number (optional — likha to bill par show)</label>
-                    <input type="text" id="pfBizNTN" maxlength="20" placeholder="1234567-8">
+                    <label>🏙️ City (optional)</label>
+                    <input type="text" id="pfBizCity" maxlength="30" placeholder="City">
                 </div>
             </div>
             <div class="form-row">
+                <div class="form-group">
+                    <label>🔢 NTN Number (optional — likha to bill par show)</label>
+                    <input type="text" id="pfBizNTN" maxlength="20" placeholder="1234567-8">
+                </div>
                 <div class="form-group">
                     <label>📋 Licence No (optional — likha to bill par show)</label>
                     <input type="text" id="pfBizLic" maxlength="30" placeholder="Licence No">
                 </div>
-                <div class="form-group">
-                    <label>🖼️ Agency Logo (optional — bill left side)</label>
-                    <input type="file" id="pfBizLogo" accept="image/*" style="padding:8px;">
-                </div>
             </div>
             <div class="form-row">
+                <div class="form-group">
+                    <label>🖼️ Agency Logo (optional — bill left side par)</label>
+                    <input type="file" id="pfBizLogo" accept="image/*" style="padding:8px; background:#fff; border:2px solid #e0e6e8; border-radius:10px;">
+                    <small id="logoStatus" style="color:#27ae60; font-weight:bold; display:none;">✅ Logo selected — Save dabayen!</small>
+                </div>
                 <div class="form-group">
                     <label>💳 Pay Type Default (CASH / CREDIT)</label>
                     <select id="pfPayType" class="select-input">
@@ -143,16 +148,16 @@
                         <option value="CREDIT">💳 CREDIT</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>🎨 My Bill Template</label>
-                    <select id="pfTemplate" class="select-input">
-                        <option value="template4">⚡ Modern Minimal (Default)</option>
-                        <option value="template1">🇵🇰 Urdu Classic</option>
-                        <option value="template2">📋 Traders English</option>
-                        <option value="template3">🇵🇰 Urdu + English Mix</option>
-                        <option value="template5">💎 Premium Full</option>
-                    </select>
-                </div>
+            </div>
+            <div class="form-group">
+                <label>🎨 My Bill Template (Print design!)</label>
+                <select id="pfTemplate" class="select-input">
+                    <option value="template4">⚡ Modern Minimal (Default)</option>
+                    <option value="template1">🇵🇰 Urdu Classic</option>
+                    <option value="template2">📋 Traders English</option>
+                    <option value="template3">🇵🇰 Urdu + English Mix</option>
+                    <option value="template5">💎 Premium Full</option>
+                </select>
             </div>
             <button type="submit" class="btn btn-primary" id="saveBizBtn">
                 💾 Save Business Info
@@ -210,7 +215,7 @@
     const db = firebase.firestore();
 
     // ============================================
-    // 📋 BUSINESS TYPES MAP
+    // 📋 MAPS
     // ============================================
     const BUSINESS_TYPES = {
         'medical': '🏪 Medical Store',
@@ -247,6 +252,7 @@
     let myRole = null;
     let myAgencyId = null;
     let myEmail = null;
+    let pendingLogoBase64 = null;   // 🆕 Naya logo (save par update hoga!)
 
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
@@ -257,7 +263,7 @@
         myEmail = user.email;
 
         try {
-            // Self-heal (agar profile missing ho)
+            // Self-heal
             let doc = await db.collection('users').doc(myUid).get();
             if (!doc.exists) {
                 let role = 'owner';
@@ -287,17 +293,16 @@
                 return;
             }
 
-            // Form fill — Personal
+            // Personal fill
             document.getElementById('myEmail').innerText = myEmail;
             document.getElementById('pfEmail').value = myEmail;
             document.getElementById('pfRole').value = ROLE_NAMES[myRole] || myRole;
             document.getElementById('pfName').value = data.name || '';
             document.getElementById('pfMobile').value = data.mobile || '';
 
-            // 🏢 Business card — SIRF OWNER ke liye (aur agency ho to)
+            // 🏢 Business — SIRF OWNER
             if (myRole === 'owner') {
                 if (!myAgencyId) {
-                    // Purana user — agency missing! Bana do default
                     const agencyRef = await db.collection('agencies').add({
                         name: data.name || (myEmail.split('@')[0] + ' Business'),
                         businessType: 'other',
@@ -306,7 +311,7 @@
                         ownerUid: myUid,
                         ownerEmail: myEmail,
                         createdAt: new Date().toISOString(),
-                        createdBy: 'profile-auto-repair' // 🏷️
+                        createdBy: 'profile-auto-repair'
                     });
                     myAgencyId = agencyRef.id;
                     await db.collection('users').doc(myUid).update({
@@ -315,7 +320,6 @@
                     });
                 }
 
-                // Business card dikhao + data fill
                 document.getElementById('businessCard').style.display = 'block';
                 const agDoc = await db.collection('agencies').doc(myAgencyId).get();
                 if (agDoc.exists) {
@@ -323,10 +327,13 @@
                     document.getElementById('pfBizName').value = ag.name || '';
                     document.getElementById('pfBizType').value = ag.businessType || 'other';
                     document.getElementById('pfBizMobile').value = ag.mobile || '';
+                    document.getElementById('pfBizMobile2').value = ag.mobile2 || '';
+                    document.getElementById('pfBizMobile3').value = ag.mobile3 || '';
                     document.getElementById('pfBizCity').value = ag.city || '';
                     document.getElementById('pfBizAddress').value = ag.address || '';
                     document.getElementById('pfBizNTN').value = ag.ntn || '';
-                    document.getElementById('pfBizReg').value = ag.regNo || '';
+                    document.getElementById('pfBizLic').value = ag.licenceNo || '';
+                    document.getElementById('pfPayType').value = ag.payType || 'CASH';
                     document.getElementById('pfTemplate').value = ag.template || 'template4';
                 }
             }
@@ -372,7 +379,36 @@
     });
 
     // ============================================
-    // 💾 SAVE BUSINESS INFO (Owner only)
+    // 🖼️ LOGO UPLOAD (compress → base64 ready!)
+    // ============================================
+    document.getElementById('pfBizLogo').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            // 🗜️ Compress: 200px max (chota base64 = Firestore safe!)
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(200 / img.width, 200 / img.height, 1);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                pendingLogoBase64 = canvas.toDataURL('image/png');
+
+                // Status + preview
+                const status = document.getElementById('logoStatus');
+                status.style.display = 'inline';
+                status.innerText = '✅ Logo ready — Save dabayen!';
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ============================================
+    // 💾 SAVE BUSINESS INFO (Owner only) — 🆕 Saare naye fields!
     // ============================================
     document.getElementById('businessForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -388,17 +424,29 @@
         document.getElementById('saveBizBtn').disabled = true;
 
         try {
-            await db.collection('agencies').doc(myAgencyId).update({
+            const updateData = {
                 name: bizName,
                 businessType: bizType,
                 mobile: document.getElementById('pfBizMobile').value.trim(),
+                mobile2: document.getElementById('pfBizMobile2').value.trim(),     // 🆕
+                mobile3: document.getElementById('pfBizMobile3').value.trim(),     // 🆕
                 city: document.getElementById('pfBizCity').value.trim(),
                 address: document.getElementById('pfBizAddress').value.trim(),
                 ntn: document.getElementById('pfBizNTN').value.trim(),
-                regNo: document.getElementById('pfBizReg').value.trim(),
+                licenceNo: document.getElementById('pfBizLic').value.trim(),       // 🆕
+                payType: document.getElementById('pfPayType').value,               // 🆕
                 template: document.getElementById('pfTemplate').value,
                 updatedAt: new Date().toISOString()
-            });
+            };
+
+            // 🖼️ Logo sirf tab update ho jab naya select ho!
+            if (pendingLogoBase64) {
+                updateData.logoBase64 = pendingLogoBase64;
+                pendingLogoBase64 = null;
+                document.getElementById('logoStatus').style.display = 'none';
+            }
+
+            await db.collection('agencies').doc(myAgencyId).update(updateData);
 
             document.getElementById('saveBizBtn').disabled = false;
             Swal.fire({
@@ -413,7 +461,7 @@
     });
 
     // ============================================
-    // 🔑 CHANGE PASSWORD (Current password verify ke sath!)
+    // 🔑 CHANGE PASSWORD
     // ============================================
     document.getElementById('passwordForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -422,7 +470,6 @@
         const newPass = document.getElementById('newPass').value;
         const confPass = document.getElementById('confPass').value;
 
-        // Validations
         if (newPass.length < 6) {
             Swal.fire('⚠️', 'Naya password min 6 characters ka ho!', 'warning');
             return;
@@ -439,23 +486,16 @@
         document.getElementById('savePassBtn').disabled = true;
 
         try {
-            // 1. Current password VERIFY (reauthenticate)
             const cred = firebase.auth.EmailAuthProvider.credential(myEmail, curPass);
             await auth.currentUser.reauthenticateWithCredential(cred);
-
-            // 2. Password update
             await auth.currentUser.updatePassword(newPass);
 
-            // 3. Firestore mein bhi update (agar tempPassword system hai —
-            //    owner-panel wale bookers ke liye consistent rahe!)
-            //    NOTE: Ye apna khud ka password hai — tempPassword update 
-            //    sirf tab jab user ka tempPassword field exist kare
             try {
                 await db.collection('users').doc(myUid).update({
                     tempPassword: newPass,
                     passwordChangedAt: new Date().toISOString()
                 });
-            } catch (e) { /* field optional hai */ }
+            } catch (e) { /* optional */ }
 
             document.getElementById('savePassBtn').disabled = false;
             document.getElementById('passwordForm').reset();
@@ -501,6 +541,6 @@
 
 <!-- 🧭 SIDEBAR SYSTEM -->
 <script src="sidebar.js"></script>
-
+    
 </body>
 </html>
