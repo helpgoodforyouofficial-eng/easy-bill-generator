@@ -259,3 +259,20 @@
     .panel-card { padding: 25px; }
     .item-row .row-grid { grid-template-columns: 2fr 1fr; }
 }
+
+/* 🆕 ✖ Button fix — Description box se UPAR right corner mein */
+.item-row .row-del {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 26px;
+    height: 26px;
+    background: var(--danger);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 11px;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
