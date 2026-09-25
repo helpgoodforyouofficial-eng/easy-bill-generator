@@ -895,7 +895,7 @@ function buildFallbackBillHTML(bill) {
                 <b> Date:</b> ${billDate}<br>
                 <b> Time:</b> ${billTime}
             </div>
-       </div>
+      
         
 
         <!-- 👤 CUSTOMER BOX (left details + right meta!) -->
@@ -908,6 +908,8 @@ function buildFallbackBillHTML(bill) {
                 ${bill.customerNTN ? `<br><span class="cust-label">🔢 NTN:</span> <span class="dim-value"> ${bill.customerNTN}</span>` : ''}
             </div>
         </div>
+</div>
+
 
         <table>
             <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
