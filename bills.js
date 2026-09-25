@@ -448,7 +448,17 @@ function calcTotals() {
     });
 
     const discount = parseFloat(document.getElementById('sumDiscount').value) || 0;
-    const grand = Math.max(0, subTotal - discount);
+    
+    // 🆕 TAX CALC (checkbox ON + rate > 0)
+    const taxEnabled = document.getElementById('taxEnabled');
+    const taxRateInput = document.getElementById('taxRate');
+    let taxAmount = 0;
+    if (taxEnabled && taxEnabled.checked && taxRateInput) {
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+        if (taxRate > 0) taxAmount = ((subTotal - discount) * taxRate) / 100;
+    }
+
+    const grand = Math.max(0, (subTotal - discount) + taxAmount);
     const received = parseFloat(document.getElementById('sumReceived').value) || 0;
     const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
     const balance = (prevBal + grand) - received;
@@ -456,6 +466,8 @@ function calcTotals() {
     document.getElementById('sumSubTotal').innerText = subTotal.toFixed(2);
     document.getElementById('sumGrand').innerText = grand.toFixed(2);
     document.getElementById('sumBalance').innerText = balance.toFixed(2);
+        const taxEl = document.getElementById('sumTax');
+    if (taxEl) taxEl.innerText = taxAmount.toFixed(2);
 }
 
 document.getElementById('sumDiscount').addEventListener('input', calcTotals);
@@ -490,7 +502,18 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
 
     let subTotal = 0;
     items.forEach(it => subTotal += it.total);
-    const grand = Math.max(0, subTotal - discount);
+
+    // 🆕 TAX CALC (calcTotals jaisa hi — save par bhi!)
+    const taxEnabled = document.getElementById('taxEnabled');
+    const taxRateInput = document.getElementById('taxRate');
+    let taxRate = 0;
+    let taxAmount = 0;
+    if (taxEnabled && taxEnabled.checked && taxRateInput) {
+        taxRate = parseFloat(taxRateInput.value) || 0;
+        if (taxRate > 0) taxAmount = ((subTotal - discount) * taxRate) / 100;
+    }
+
+    const grand = Math.max(0, (subTotal - discount) + taxAmount);
     const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
     const balance = (prevBal + grand) - received;
 
@@ -544,6 +567,8 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
             itemCount: items.length,
             subTotal: subTotal,
             discount: discount,
+            taxRate: taxRate,        // 🆕
+            taxAmount: taxAmount,    // 🆕
             grandTotal: grand,
             received: received,
             previousBalance: prevBal,
@@ -609,6 +634,8 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         // ✅ SUCCESS SCREEN
         lastSavedBill = { 
             billNo, customerName, items, subTotal, discount, grand, received, balance, prevBal,
+            taxRate: taxRate,        // 🆕 (print par tax row dikhegi!)
+            taxAmount: taxAmount,    // 🆕
             date: billData.date,
             time: billData.time,
             agencyCity: (myAgency && myAgency.city) || '',
