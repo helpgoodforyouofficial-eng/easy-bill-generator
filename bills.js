@@ -895,6 +895,7 @@ function buildFallbackBillHTML(bill) {
                 <b> Date:</b> ${billDate}<br>
                 <b> Time:</b> ${billTime}
             </div>
+       </div>
         
 
         <!-- 👤 CUSTOMER BOX (left details + right meta!) -->
