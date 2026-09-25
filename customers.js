@@ -291,24 +291,31 @@ document.getElementById('addCustomerForm').addEventListener('submit', async (e) 
 
     document.getElementById('saveCustomerBtn').disabled = true;
 
-    try {
+        try {
         const custData = {
             name: name,
-            shopName: shopName,              // 🆕
-            customerType: customerType,      // 🆕
             mobile: mobile,
             address: address,
             route: route,
-            city: city,                      // 🆕
-            paymentTerms: paymentTerms,      // 🆕
-            creditLimit: creditLimit,        // 🆕
-            notes: notes,                    // 🆕
             previousBalance: prevBalance,
             agencyId: myAgencyId,
             updatedAt: new Date().toISOString()
         };
 
         if (editingCustomerId) {
+            // 🆕 PREVIOUS BALANCE SYNC:
+            // Agar user ne Previous Balance badla, to Balance bhi
+            // utne farq ke sath adjust ho jaye (bills ka hissa safe!)
+            const oldCust = allCustomers.find(x => x.id === editingCustomerId);
+            const oldPrev = oldCust ? (oldCust.previousBalance || 0) : 0;
+            const oldBal = oldCust ? (oldCust.balance || 0) : 0;
+            
+            if (prevBalance !== oldPrev) {
+                custData.balance = oldBal + (prevBalance - oldPrev);
+                // Example: purana Prev 0, Bal 0 → naya Prev 500 → Bal 500!
+                //          purana Prev 500, Bal 500 → naya Prev 300 → Bal 300!
+            }
+            
             await db.collection('customers').doc(editingCustomerId).update(custData);
             Swal.fire({
                 toast: true, position: 'top-end', showConfirmButton: false,
