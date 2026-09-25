@@ -769,7 +769,7 @@ function buildFallbackBillHTML(bill) {
             .ag-address { font-size: 13px; color: #444; margin-bottom: 4px; }
             .ag-mobiles { font-size: 13px; color: #444; }
             .ag-mobiles span { margin-right: 12px; }
-            .ag-ntn-line { font-size: 13px; color: #333; font-weight: bold; margin-top: 4px; }
+                        .ag-ntn-line { font-size: 13px; color: #333; font-weight: bold; margin-top: 4px; display: inline; }
             .ag-lic-line { font-size: 13px; color: #333; margin-top: 2px; }
             
             /* 💳 PAY TYPE (right top — bold!) */
@@ -878,8 +878,7 @@ function buildFallbackBillHTML(bill) {
                 <div class="ag-name">${bizName}</div>
                 ${ag.address ? `<div class="ag-address"> add: ${ag.address}</div>` : ''}
                 ${mobilesLine ? `<div class="ag-mobiles">${mobilesLine}</div>` : ''}
-                ${ag.ntn ? `<div class="ag-ntn-line"> NTN: ${ag.ntn}</div>` : ''}
-                ${ag.licenceNo ? `<div class="ag-lic-line"> Licence: ${ag.licenceNo}</div>` : ''}
+                                ${(ag.ntn || ag.licenceNo) ? `<div class="ag-ntn-line">NTN: ${ag.ntn || '—'}${ag.licenceNo ? ` | Licence: ${ag.licenceNo}` : ''}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
