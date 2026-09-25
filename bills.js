@@ -714,7 +714,7 @@ function buildFallbackBillHTML(bill) {
 
     // 📱 Saare mobiles (jo bhare hon — EK line mein!)
     const mobiles = [ag.mobile, ag.mobile2, ag.mobile3].filter(m => m && m.trim());
-    const mobilesLine = mobiles.map(m => `📱 ${m}`).join(' &nbsp; ');
+    const mobilesLine = mobiles.map(m => ` ${m}`).join(' &nbsp; ');
 
     // Date/Time fallback
     let billDate = bill.date || '';
@@ -929,7 +929,7 @@ function buildFallbackBillHTML(bill) {
             <div class="bal"><span class="label">TOTAL BALANCE:</span><span>Rs ${(bill.balance || 0).toFixed(2)}</span></div>
         </div>
 
-        <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
+        <div class="thanks"> Shukriya! Dobara tashreef layen!</div>
         
         <div class="sig-area">
             <div class="sig-line">Authorized Signature</div>
