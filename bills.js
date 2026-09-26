@@ -888,18 +888,8 @@ function buildFallbackBillHTML(bill) {
             <div class="pay-type">${payType}</div>
         </div>
 
-        <!-- 🧾 BILL META (right side stacked) -->
-        <div class="bill-meta-box">
-            <div class="bill-meta-inner">
-                <b> Bill No:</b> ${bill.billNo}<br>
-                <b> Date:</b> ${billDate}<br>
-                <b> Time:</b> ${billTime}
-            </div>
-      
-        
-
-        <!-- 👤 CUSTOMER BOX (left details + right meta!) -->
-                <div class="cust-box">
+                <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META — ek sath!) -->
+        <div class="cust-box">
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
                 <span class="cust-name-big"> ${custName}</span>
@@ -907,8 +897,14 @@ function buildFallbackBillHTML(bill) {
                 ${custAddress ? `<br><span class="cust-label">📍 Address:</span> <span class="cust-addr"> ${custAddress}</span>` : ''}
                 ${bill.customerNTN ? `<br><span class="cust-label">🔢 NTN:</span> <span class="dim-value"> ${bill.customerNTN}</span>` : ''}
             </div>
+            <div class="cust-right">
+                <div class="bill-meta-inner">
+                    <b>🧾 Bill No:</b> ${bill.billNo}<br>
+                    <b>📅 Date:</b> ${billDate}<br>
+                    <b>🕐 Time:</b> ${billTime}
+                </div>
+            </div>
         </div>
-</div>
 
 
         <table>
