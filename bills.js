@@ -647,18 +647,27 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         await batch.commit();
 
         // ✅ SUCCESS SCREEN
-        lastSavedBill = { 
-            billNo, customerName, items, subTotal, discount, grand, received, balance, prevBal,
-            previousBalance: prevBal,
-            taxRate: taxRate,        // 🆕 (print par tax row dikhegi!)
-            taxAmount: taxAmount,    // 🆕
-            date: billData.date,
-            time: billData.time,
-            agencyCity: (myAgency && myAgency.city) || '',
-            agencyMobile: (myAgency && myAgency.mobile) || '',
-            agencyAddress: (myAgency && myAgency.address) || '',
-            agencyNTN: (myAgency && myAgency.ntn) || ''
-        };
+ lastSavedBill = { 
+    billNo, 
+    customerName, 
+    items, 
+    subTotal, 
+    discount, 
+    grand,
+    grandTotal: grand,
+    received, 
+    balance, 
+    prevBal,
+    previousBalance: prevBal,
+    taxRate: taxRate,
+    taxAmount: taxAmount,
+    date: billData.date,
+    time: billData.time,
+    agencyCity: (myAgency && myAgency.city) || '',
+    agencyMobile: (myAgency && myAgency.mobile) || '',
+    agencyAddress: (myAgency && myAgency.address) || '',
+    agencyNTN: (myAgency && myAgency.ntn) || ''
+};
 
         document.querySelectorAll('.panel-container .panel-card').forEach((c, i) => {
             if (i === 0) c.style.display = 'none';
@@ -667,21 +676,15 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         document.getElementById('successScreen').style.display = 'block';
 
         document.getElementById('ssBillNo').innerText = billNo;
-document.getElementById('ssCustomer').innerText = customerName;
-document.getElementById('ssGrand').innerText = grand.toFixed(2);
-
-const ssTaxEl = document.getElementById('ssTax');
-if (ssTaxEl) {
-    ssTaxEl.innerText = taxAmount.toFixed(2);
-}
-
-const ssPrevBalEl = document.getElementById('ssPrevBalance');
+        document.getElementById('ssCustomer').innerText = customerName;
+        document.getElementById('ssGrand').innerText = grand.toFixed(2);
+        const ssPrevBalEl = document.getElementById('ssPrevBalance');
 if (ssPrevBalEl) {
     ssPrevBalEl.innerText = prevBal.toFixed(2);
 }
+        document.getElementById('ssReceived').innerText = received.toFixed(2);
+        document.getElementById('ssBalance').innerText = balance.toFixed(2);
 
-document.getElementById('ssReceived').innerText = received.toFixed(2);
-document.getElementById('ssBalance').innerText = balance.toFixed(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
