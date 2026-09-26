@@ -669,7 +669,10 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         document.getElementById('ssBillNo').innerText = billNo;
         document.getElementById('ssCustomer').innerText = customerName;
         document.getElementById('ssGrand').innerText = grand.toFixed(2);
-        document.getElementById('ssPrevBalance').innerText = prevBal.toFixed(2);
+        const ssPrevBalEl = document.getElementById('ssPrevBalance');
+if (ssPrevBalEl) {
+    ssPrevBalEl.innerText = prevBal.toFixed(2);
+}
         document.getElementById('ssReceived').innerText = received.toFixed(2);
         document.getElementById('ssBalance').innerText = balance.toFixed(2);
 
