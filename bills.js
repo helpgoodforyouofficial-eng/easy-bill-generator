@@ -814,15 +814,26 @@ function buildFallbackBillHTML(bill) {
                 align-items: flex-start;
             }
             .cust-left { flex: 1; min-width: 200px; line-height: 1.8; }
-            .cust-right {
+                        .cust-right {
                 flex: 0 0 auto;
-                text-align: right;
+                text-align: left;
                 line-height: 1.8;
                 font-size: 12px;
                 color: #444;
                 border-left: 1px dashed #bbb;
                 padding-left: 15px;
             }
+            /* 🆕 Bill Meta box (grey rounded — right column ke andar!) */
+            .bill-meta-inner {
+                background: #f8f9fa;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 12px;
+                line-height: 1.9;
+                min-width: 150px;
+            }
+            .bill-meta-inner b { color: #2c3e50; }
             .cust-name-big { font-size: 15px; font-weight: bold; color: #1a1a1a; }
             .cust-addr { color: #444; word-wrap: break-word; max-width: 320px; display: inline; }
             .cust-label { font-size: 11px; color: #7f8c8d; font-weight: bold; }
