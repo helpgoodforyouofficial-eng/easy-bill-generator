@@ -105,10 +105,16 @@
                 <span>Rs <span id="sumSubTotal">0.00</span></span>
             </div>
             <div class="total-row">
-                <span>Discount:</span>
-                <input type="number" id="sumDiscount" value="0" min="0" step="0.01"
-                       style="width:90px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:right;">
-            </div>
+    <span>Discount:</span>
+    <input type="number" id="sumDiscount" value="0" min="0" step="0.01"
+           style="width:90px; padding:6px; border:1px solid #ddd; border-radius:6px; text-align:right;">
+</div>
+
+<!-- 🆕 PREVIOUS BALANCE DISPLAY -->
+<div class="total-row">
+    <span>Previous Balance:</span>
+    <span>Rs <span id="sumPrevBalance">0.00</span></span>
+</div>
             <!-- 🆕 TAX ROW (checkbox + rate) -->
             <div class="total-row">
                 <span class="tax-inline">
