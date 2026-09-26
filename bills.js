@@ -473,6 +473,15 @@ function calcTotals() {
 document.getElementById('sumDiscount').addEventListener('input', calcTotals);
 document.getElementById('sumReceived').addEventListener('input', calcTotals);
 
+const taxEnabled = document.getElementById('taxEnabled');
+const taxRate = document.getElementById('taxRate');
+
+if (taxEnabled) {
+    taxEnabled.addEventListener('change', calcTotals);
+}
+if (taxRate) {
+    taxRate.addEventListener('input', calcTotals);
+}
 // ============================================
 // 💾 SAVE BILL — 🔥 BATCHED WRITE + ASLI INCREMENT!
 // Yahan ASLI counter increment hota hai (preview nahi!)
