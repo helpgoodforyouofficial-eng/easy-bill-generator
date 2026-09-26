@@ -667,15 +667,21 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         document.getElementById('successScreen').style.display = 'block';
 
         document.getElementById('ssBillNo').innerText = billNo;
-        document.getElementById('ssCustomer').innerText = customerName;
-        document.getElementById('ssGrand').innerText = grand.toFixed(2);
-        const ssPrevBalEl = document.getElementById('ssPrevBalance');
+document.getElementById('ssCustomer').innerText = customerName;
+document.getElementById('ssGrand').innerText = grand.toFixed(2);
+
+const ssTaxEl = document.getElementById('ssTax');
+if (ssTaxEl) {
+    ssTaxEl.innerText = taxAmount.toFixed(2);
+}
+
+const ssPrevBalEl = document.getElementById('ssPrevBalance');
 if (ssPrevBalEl) {
     ssPrevBalEl.innerText = prevBal.toFixed(2);
 }
-        document.getElementById('ssReceived').innerText = received.toFixed(2);
-        document.getElementById('ssBalance').innerText = balance.toFixed(2);
 
+document.getElementById('ssReceived').innerText = received.toFixed(2);
+document.getElementById('ssBalance').innerText = balance.toFixed(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (error) {
