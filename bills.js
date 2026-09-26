@@ -699,23 +699,22 @@ function buildBillHTML(bill) {
 }
 
 // ============================================
-// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v2)
+// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v3 FINAL)
 // ✅ Logo (left, agar ho) + Naam + Address
-// ✅ 3 Mobiles EK line mein
-// ✅ NTN + Licence (conditional — bhara ho to show!)
+// ✅ 🆕 Owner Name + 2 Mobiles — EK LINE (auto-shrink!)
+// ✅ 🆕 NTN + Licence — EK line (inline, text only)
+// ✅ 🆕 Bill Meta — grey rounded box, Customer box ke ANDAR right!
+// ✅ 🆕 Customer NTN bhi box mein!
 // ✅ CASH/CREDIT (right top — bold!)
-// ✅ Customer box: Naam + Mobile + Address (wrap!)
-// ✅ Totals: Labels + Amounts SAATH!
-// ✅ Tax row (agar bill mein tax ho!)
 // ============================================
 function buildFallbackBillHTML(bill) {
     const ag = myAgency || {};
     const bizName = ag.name || 'Easy Bill Generator';
     const payType = bill.payType || ag.payType || 'CASH';
 
-    // 📱 Saare mobiles (jo bhare hon — EK line mein!)
-    const mobiles = [ag.mobile, ag.mobile2, ag.mobile3].filter(m => m && m.trim());
-    const mobilesLine = mobiles.map(m => ` ${m}`).join(' &nbsp; ');
+    // 📱 EK LINE: Owner Name + 2 Mobiles (naam lamba ho to font khud adjust!)
+    const ownerNm = ag.ownerName || '';
+    const mobilesArr = [ag.mobile, ag.mobile2].filter(m => m && m.trim()).map(m => `📱 ${m}`);
 
     // Date/Time fallback
     let billDate = bill.date || '';
@@ -744,7 +743,7 @@ function buildFallbackBillHTML(bill) {
         <style>
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 700px; margin: auto; color: #222; }
             
-            /* 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) */
+           /* 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) */
             .ag-header {
                 display: flex;
                 align-items: flex-start;
@@ -753,25 +752,51 @@ function buildFallbackBillHTML(bill) {
                 margin-bottom: 12px;
             }
             .ag-logo {
-                width: 80px; min-height: 70px;
-                flex: 0 0 80px;
+                width: 60px; min-height: 55px;
+                flex: 0 0 60px;
                 display: flex; align-items: center; justify-content: center;
             }
-            .ag-logo img { max-width: 80px; max-height: 70px; }
-            .ag-logo .logo-space { width: 80px; }
-            .ag-details { flex: 1; text-align: left; padding: 0 10px; }
+            .ag-logo img { max-width: 60px; max-height: 55px; }
+            .ag-logo .logo-space { width: 60px; }
+            .ag-details { flex: 1; text-align: left; padding: 0 10px; min-width: 0; }
+            
+            /* 🏢 NAAM — clamp se khud adjust (lamba naam = chota font!) */
             .ag-name {
-                font-size: 24px;
+                font-size: clamp(11px, 4vw, 19px);
                 font-weight: 900;
                 color: #1a1a1a;
-                margin-bottom: 4px;
                 letter-spacing: 0.5px;
+                white-space: nowrap;
+                overflow: hidden;
             }
-            .ag-address { font-size: 13px; color: #444; margin-bottom: 4px; }
-            .ag-mobiles { font-size: 13px; color: #444; }
-            .ag-mobiles span { margin-right: 12px; }
-                        .ag-ntn-line { font-size: 13px; color: #333; font-weight: bold; margin-top: 4px; display: inline; }
-            .ag-lic-line { font-size: 13px; color: #333; margin-top: 2px; }
+            .ag-address { font-size: 11px; color: #444; margin: 2px 0 3px; }
+            
+            /* 📱 OWNER + MOBILES EK LINE (flex — sab fit!) */
+            .ag-contact-line {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: nowrap;
+                font-size: 12px;
+                color: #444;
+                font-weight: bold;
+                overflow: hidden;
+            }
+            /* Naam lamba to ye khud shrink hoga (mobiles sahi rahenge!) */
+            .ag-owner-nm {
+                font-weight: 900;
+                color: #1a1a1a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+            .ag-owner-nm.small { font-size: 10px !important; }
+            .ag-mobiles span { margin-right: 8px; white-space: nowrap; }
+            
+            /* 🔢📋 NTN + LICENCE (ek line — inline!) */
+            .ag-ntn-line { font-size: 11px; color: #333; font-weight: bold; margin-top: 3px; }
             
             /* 💳 PAY TYPE (right top — bold!) */
             .pay-type {
@@ -783,20 +808,19 @@ function buildFallbackBillHTML(bill) {
                 align-self: center;
             }
 
-            /* 🧾 BILL META (right side — stacked!) */
-                        .bill-meta-box {
+            /* 🧾 BILL META (grey rounded — right column ke andar!) */
+            .bill-meta-box {
                 display: flex;
                 justify-content: flex-end;
-                margin-bottom: 12px;
             }
             .bill-meta-inner {
-                background: #f8f9fa;              /* 🆕 Customer box jaisa grey! */
+                background: #f8f9fa;
                 border: 1px solid #e0e6e8;
                 border-radius: 8px;
-                padding: 10px 14px;
-                font-size: 13px;
+                padding: 8px 12px;
+                font-size: 12px;
                 line-height: 1.9;
-                min-width: 220px;
+                min-width: 150px;
             }
             .bill-meta-inner b { color: #2c3e50; }
             
@@ -814,29 +838,16 @@ function buildFallbackBillHTML(bill) {
                 align-items: flex-start;
             }
             .cust-left { flex: 1; min-width: 200px; line-height: 1.8; }
-                        .cust-right {
+            .cust-right {
                 flex: 0 0 auto;
                 text-align: left;
-                line-height: 1.8;
-                font-size: 12px;
-                color: #444;
                 border-left: 1px dashed #bbb;
                 padding-left: 15px;
             }
-            /* 🆕 Bill Meta box (grey rounded — right column ke andar!) */
-            .bill-meta-inner {
-                background: #f8f9fa;
-                border: 1px solid #e0e6e8;
-                border-radius: 8px;
-                padding: 8px 12px;
-                font-size: 12px;
-                line-height: 1.9;
-                min-width: 150px;
-            }
-            .bill-meta-inner b { color: #2c3e50; }
             .cust-name-big { font-size: 15px; font-weight: bold; color: #1a1a1a; }
             .cust-addr { color: #444; word-wrap: break-word; max-width: 320px; display: inline; }
             .cust-label { font-size: 11px; color: #7f8c8d; font-weight: bold; }
+            .dim-value { color: #222; font-weight: 600; }
             
             /* 📋 ITEMS TABLE */
             table { width: 100%; border-collapse: collapse; margin: 10px 0; }
@@ -893,13 +904,14 @@ function buildFallbackBillHTML(bill) {
             <div class="ag-details">
                 <div class="ag-name">${bizName}</div>
                 ${ag.address ? `<div class="ag-address"> Address: ${ag.address}</div>` : ''}
-                ${mobilesLine ? `<div class="ag-mobiles">${mobilesLine}</div>` : ''}
-                                ${(ag.ntn || ag.licenceNo) ? `<div class="ag-ntn-line">NTN: ${ag.ntn || '—'}${ag.licenceNo ? ` | Licence: ${ag.licenceNo}` : ''}</div>` : ''}
+                <!-- 🆕 EK LINE: Owner Name + 2 Mobiles -->
+                ${(ownerNm || mobilesArr.length > 0) ? `<div class="ag-contact-line" id="agContactLine"><span class="ag-owner-nm" id="agOwnerName" data-name="${ownerNm}">${ownerNm}</span>${mobilesArr.map(m => `<span>${m}</span>`).join(' ')}</div>` : ''}
+                ${(ag.ntn || ag.licenceNo) ? `<div class="ag-ntn-line">NTN: ${ag.ntn || '—'}${ag.licenceNo ? ` | Licence: ${ag.licenceNo}` : ''}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
 
-                <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META — ek sath!) -->
+        <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META — ek sath!) -->
         <div class="cust-box">
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
@@ -916,7 +928,6 @@ function buildFallbackBillHTML(bill) {
                 </div>
             </div>
         </div>
-
 
         <table>
             <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
@@ -948,6 +959,33 @@ function buildFallbackBillHTML(bill) {
         </div>
 
         <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
+
+        <!-- 🌟 AUTO-SHRINK SCRIPT (Print window ke ANDAR — yahan chalega!) -->
+        <script>
+            // Owner name lamba ho to font chota karo!
+            // (Mobile numbers sahi size mein rahenge — sirf naam adjust hoga!)
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    try {
+                        var nameEl = document.getElementById('agOwnerName');
+                        if (!nameEl) return;
+                        
+                        var rawName = nameEl.getAttribute('data-name') || nameEl.innerText;
+                        if (!rawName || rawName.trim() === '') return;
+                        
+                        var words = rawName.split(/\\s+/).length;
+                        var fontSize = 13;
+                        
+                        if (words >= 6) fontSize = 9;
+                        else if (words >= 5) fontSize = 10;
+                        else if (words >= 4) fontSize = 11;
+                        else if (words >= 3) fontSize = 12;
+                        
+                        nameEl.style.fontSize = fontSize + 'px';
+                    } catch (e) { console.warn('Auto-shrink:', e); }
+                }, 50);
+            });
+        </script>
     </body>
     </html>
     `;
