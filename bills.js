@@ -649,6 +649,7 @@ document.getElementById('saveBillBtn').addEventListener('click', async () => {
         // ✅ SUCCESS SCREEN
         lastSavedBill = { 
             billNo, customerName, items, subTotal, discount, grand, received, balance, prevBal,
+            previousBalance: prevBal,
             taxRate: taxRate,        // 🆕 (print par tax row dikhegi!)
             taxAmount: taxAmount,    // 🆕
             date: billData.date,
