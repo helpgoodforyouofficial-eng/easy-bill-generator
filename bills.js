@@ -459,15 +459,20 @@ function calcTotals() {
     }
 
     const grand = Math.max(0, (subTotal - discount) + taxAmount);
-    const received = parseFloat(document.getElementById('sumReceived').value) || 0;
-    const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
-    const balance = (prevBal + grand) - received;
+const received = parseFloat(document.getElementById('sumReceived').value) || 0;
+const prevBal = selectedCustomer ? (selectedCustomer.balance || 0) : 0;
+const balance = (prevBal + grand) - received;
 
-    document.getElementById('sumSubTotal').innerText = subTotal.toFixed(2);
-    document.getElementById('sumGrand').innerText = grand.toFixed(2);
-    document.getElementById('sumBalance').innerText = balance.toFixed(2);
-        const taxEl = document.getElementById('sumTax');
-    if (taxEl) taxEl.innerText = taxAmount.toFixed(2);
+document.getElementById('sumSubTotal').innerText = subTotal.toFixed(2);
+document.getElementById('sumGrand').innerText = grand.toFixed(2);
+
+const prevBalanceEl = document.getElementById('sumPrevBalance');
+if (prevBalanceEl) prevBalanceEl.innerText = prevBal.toFixed(2);
+
+document.getElementById('sumBalance').innerText = balance.toFixed(2);
+
+const taxEl = document.getElementById('sumTax');
+if (taxEl) taxEl.innerText = taxAmount.toFixed(2);
 }
 
 document.getElementById('sumDiscount').addEventListener('input', calcTotals);
