@@ -727,33 +727,32 @@ function buildBillHTML(bill) {
 }
 
 // ============================================
-// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v4 FINAL)
-// ✅ Business Name + 2 Mobiles — EK LINE (name shrink → gap → mobiles!)
-// ✅ SIRF 2 Mobiles (mobile + mobile2) — mobile3 IGNORE!
-// ✅ Address+City / NTN+Licence — small text, JO BHARA WOHI SHOW
-// ✅ Logo conditional (nahi hai to khali jagah NAHI)
-// ✅ CASH/CREDIT (right top — bold!)
+// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v5 FINAL)
+// ✅ Title BARA (24px + auto-shrink!)
+// ✅ Line 1: Title | Line 2: Address+City | Line 3: Mobiles PEHLE → NTN → Licence
+// ✅ SIRF 2 Mobiles (mobile + mobile2)
+// ✅ Jo bhara WOHI show — warna hide!
 // ============================================
 function buildFallbackBillHTML(bill) {
     const ag = myAgency || {};
     const bizName = ag.name || 'Easy Bill Generator';
     const payType = bill.payType || ag.payType || 'CASH';
 
-    // 📱 SIRF 2 MOBILES — jo bhare hon (Mobile 3 ab kahin nahi jayega!)
+    // 📱 SIRF 2 MOBILES — jo bhare hon
     const mobilesArr = [ag.mobile, ag.mobile2]
         .filter(m => m && String(m).trim())
         .map(m => `📱 ${String(m).trim()}`);
-    const mobilesHTML = mobilesArr.map(m => `<span>${m}</span>`).join('');
 
-    // 📍 Address + City (sirf bhari hon to show — warna hide!)
+    // 🆕 3rd LINE: Mobiles PEHLE → phir NTN → phir Licence
+    const contactBits = [];
+    if (mobilesArr.length > 0) contactBits.push(mobilesArr.join('&nbsp;&nbsp;'));
+    if (ag.ntn && String(ag.ntn).trim()) contactBits.push(`🔢 NTN: ${ag.ntn}`);
+    if (ag.licenceNo && String(ag.licenceNo).trim()) contactBits.push(`📋 Licence: ${ag.licenceNo}`);
+    const contactHTML = contactBits.join(' &nbsp;|&nbsp; ');
+
+    // 📍 Address + City (sirf bhari hon to show!)
     const addrParts = [ag.address, ag.city].filter(a => a && String(a).trim());
     const addrHTML = addrParts.length ? `📍 ${addrParts.join(', ')}` : '';
-
-    // 🔢📋 NTN + Licence (sirf bhara ho to show!)
-    const ntnBits = [];
-    if (ag.ntn && String(ag.ntn).trim()) ntnBits.push(`🔢 NTN: ${ag.ntn}`);
-    if (ag.licenceNo && String(ag.licenceNo).trim()) ntnBits.push(`📋 Licence: ${ag.licenceNo}`);
-    const ntnHTML = ntnBits.join(' &nbsp;|&nbsp; ');
 
     // Date/Time fallback
     let billDate = bill.date || '';
@@ -770,7 +769,7 @@ function buildFallbackBillHTML(bill) {
     const custMobile = bill.customerMobile || '';
     const custAddress = (bill.customerAddress || (selectedCustomer && selectedCustomer.address)) || '';
 
-    // 🆕 Tax row (agar bill mein tax ho!)
+    // 💰 Tax row (agar bill mein tax ho!)
     const taxRow = (bill.taxAmount && bill.taxAmount > 0)
         ? `<div><span class="label">Tax (${bill.taxRate || 0}%):</span><span>+ Rs ${bill.taxAmount.toFixed(2)}</span></div>`
         : '';
@@ -794,46 +793,40 @@ function buildFallbackBillHTML(bill) {
             .ag-logo img { width: 55px; height: 50px; object-fit: contain; }
             .ag-details { flex: 1; text-align: left; padding: 0 10px; min-width: 0; }
 
-            /* 🆕 NAME + MOBILES EK LINE (name khatam → gap → mobiles!) */
-            .ag-name-row {
-                display: flex;
-                align-items: baseline;
-                gap: 10px;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            /* Name lamba → JS se khud shrink — mobiles KABHI nahi katen ge! */
+            /* 🏢 TITLE — BARA (24px) + auto-shrink! */
+            .ag-name-row { white-space: nowrap; overflow: hidden; }
             .ag-name {
-                font-size: 20px;
+                font-size: 24px;
                 font-weight: 900;
                 color: #1a1a1a;
                 letter-spacing: 0.3px;
-                flex: 0 1 auto;
-                min-width: 0;
+                display: inline-block;
+                max-width: 100%;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-            /* 📱 Mobiles — SMALL text, kabhi shrink nahi! */
-            .ag-mobiles {
-                flex: 0 0 auto;
-                font-size: 11px;
-                font-weight: bold;
-                color: #444;
-            }
-            .ag-mobiles span { margin-right: 8px; }
 
-            /* 📍🔢 Choti lines — sirf bhari hon to show! */
+            /* 📍 Choti line (Address+City) */
             .ag-sub-line { font-size: 10.5px; color: #555; font-weight: 600; margin-top: 2px; word-wrap: break-word; }
+
+            /* 📱🔢 3rd LINE: Mobiles + NTN + Licence */
+            .ag-contact-line {
+                font-size: 11px;
+                color: #333;
+                font-weight: bold;
+                margin-top: 3px;
+                word-wrap: break-word;
+            }
 
             /* 💳 PAY TYPE (right top — bold!) */
             .pay-type {
                 flex: 0 0 auto;
-                font-size: 24px;
+                align-self: center;
+                font-size: 22px;
                 font-weight: 900;
                 color: #1a1a1a;
                 letter-spacing: 3px;
-                align-self: center;
             }
 
             /* 🧾 BILL META (grey rounded) */
@@ -918,16 +911,15 @@ function buildFallbackBillHTML(bill) {
         </style>
     </head>
     <body>
-        <!-- 🏢 AGENCY HEADER (jo bhara WOHI show!) -->
+        <!-- 🏢 AGENCY HEADER (Title bara → Address → Mobiles+NTN+Licence) -->
         <div class="ag-header">
             ${ag.logoBase64 ? `<div class="ag-logo"><img src="${ag.logoBase64}"></div>` : ''}
             <div class="ag-details">
                 <div class="ag-name-row">
                     <span class="ag-name" id="agName">${bizName}</span>
-                    ${mobilesHTML ? `<span class="ag-mobiles">${mobilesHTML}</span>` : ''}
                 </div>
                 ${addrHTML ? `<div class="ag-sub-line">${addrHTML}</div>` : ''}
-                ${ntnHTML ? `<div class="ag-sub-line">${ntnHTML}</div>` : ''}
+                ${contactHTML ? `<div class="ag-contact-line">${contactHTML}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
@@ -981,22 +973,22 @@ function buildFallbackBillHTML(bill) {
 
         <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
 
-        <!-- 🌟 AUTO-SHRINK (naam jitna lamba, font utna chota — MOBILES SAFE!) -->
+        <!-- 🌟 AUTO-SHRINK (24px se shuru — naam lamba to chota!) -->
         <script>
             (function() {
                 function fitName() {
                     try {
                         var nameEl = document.getElementById('agName');
                         if (!nameEl) return;
-                        var size = 20;
+                        var size = 24;
                         nameEl.style.fontSize = size + 'px';
                         var guard = 0;
-                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 9 && guard < 50) {
+                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 10 && guard < 50) {
                             size -= 0.5;
                             nameEl.style.fontSize = size + 'px';
                             guard++;
                         }
-                    } catch (e) { console.warn('Auto-shrink:', e); }
+                    } catch (e) {}
                 }
                 window.addEventListener('load', fitName);
                 setTimeout(fitName, 100);
