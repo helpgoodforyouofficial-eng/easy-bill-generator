@@ -656,7 +656,7 @@ function template3Mix(bill, agency, customer) {
 
 // ============================================
 // 🎨 TEMPLATE 4: ⚡ MODERN MINIMAL (Default!)
-// v3 — Title BIG (24px) + Line 3: Mobiles PEHLE → NTN → Licence
+// v4 — Title BIG + 👤 OWNER NAME (Title nechay!) + Line: Mobiles→NTN→Licence
 // ============================================
 function template4Modern(bill, agency, customer) {
     const items = getTemplateItems(bill);
@@ -664,7 +664,8 @@ function template4Modern(bill, agency, customer) {
     const dateStr = bill.date || '-';
     const timeStr = bill.time || '-';
     const payType = bill.payType || (agency.payType || 'CASH');
- // 🆕 OWNER NAME (Title nechay, Address oper!)
+
+    // 🆕 OWNER NAME (Title nechay, Address oper!)
     const ownerNm = String(agency.ownerName || '').trim();
     const ownerHTML = ownerNm ? `👤 ${ownerNm}` : '';
 
@@ -673,7 +674,7 @@ function template4Modern(bill, agency, customer) {
         .filter(m => m && String(m).trim())
         .map(m => `📱 ${String(m).trim()}`);
 
-    // 🆕 3rd LINE: Mobiles PEHLE → phir NTN → phir Licence
+    // 🆕 Contact LINE: Mobiles PEHLE → phir NTN → phir Licence
     const contactBits = [];
     if (mobilesArr.length > 0) contactBits.push(mobilesArr.join('&nbsp;&nbsp;'));
     if (agency.ntn && String(agency.ntn).trim()) contactBits.push(`🔢 NTN: ${agency.ntn}`);
@@ -722,10 +723,13 @@ function template4Modern(bill, agency, customer) {
                 white-space: nowrap;
             }
 
+            /* 🆕 OWNER NAME line (Title nechay — bold!) */
+            .ag-owner-line { font-size: 12.5px; color: #1a1a1a; font-weight: 800; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
             /* 📍 Choti line (Address+City) */
             .ag-sub-line { font-size: 10.5px; color: #555; font-weight: 600; margin-top: 2px; word-wrap: break-word; }
 
-            /* 📱🔢 3rd LINE: Mobiles + NTN + Licence */
+            /* 📱🔢 Contact LINE: Mobiles + NTN + Licence */
             .ag-contact-line {
                 font-size: 11px;
                 color: #333;
@@ -808,13 +812,14 @@ function template4Modern(bill, agency, customer) {
         </style>
     </head>
     <body>
-        <!-- 🏢 AGENCY HEADER (Title bara → Address → Mobiles+NTN+Licence) -->
+        <!-- 🏢 AGENCY HEADER (Title → OWNER → Address → Mobiles+NTN+Licence) -->
         <div class="ag-header">
             ${agency.logo ? `<div class="ag-logo"><img src="${agency.logo}"></div>` : ''}
             <div class="ag-details">
                 <div class="ag-name-row">
                     <span class="ag-name" id="agName">${agency.name}</span>
                 </div>
+                ${ownerHTML ? `<div class="ag-owner-line">${ownerHTML}</div>` : ''}
                 ${addrHTML ? `<div class="ag-sub-line">${addrHTML}</div>` : ''}
                 ${contactHTML ? `<div class="ag-contact-line">${contactHTML}</div>` : ''}
             </div>
