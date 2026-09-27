@@ -656,11 +656,7 @@ function template3Mix(bill, agency, customer) {
 
 // ============================================
 // 🎨 TEMPLATE 4: ⚡ MODERN MINIMAL (Default!)
-// v2 REDESIGN — Fallback jaisa professional header!
-// ✅ Logo (conditional) + Name + 2 Mobiles EK LINE (auto-shrink!)
-// ✅ Address+City / NTN+Licence — choti lines, JO BHARA WOHI SHOW
-// ✅ CASH/CREDIT (right top — bold!)
-// ✅ Customer grey box + Bill Meta right side
+// v3 — Title BIG (24px) + Line 3: Mobiles PEHLE → NTN → Licence
 // ============================================
 function template4Modern(bill, agency, customer) {
     const items = getTemplateItems(bill);
@@ -673,19 +669,19 @@ function template4Modern(bill, agency, customer) {
     const mobilesArr = [agency.mobile, agency.mobile2]
         .filter(m => m && String(m).trim())
         .map(m => `📱 ${String(m).trim()}`);
-    const mobilesHTML = mobilesArr.map(m => `<span>${m}</span>`).join('');
+
+    // 🆕 3rd LINE: Mobiles PEHLE → phir NTN → phir Licence
+    const contactBits = [];
+    if (mobilesArr.length > 0) contactBits.push(mobilesArr.join('&nbsp;&nbsp;'));
+    if (agency.ntn && String(agency.ntn).trim()) contactBits.push(`🔢 NTN: ${agency.ntn}`);
+    if (agency.licenceNo && String(agency.licenceNo).trim()) contactBits.push(`📋 Licence: ${agency.licenceNo}`);
+    const contactHTML = contactBits.join(' &nbsp;|&nbsp; ');
 
     // 📍 Address + City (sirf bhari hon to show!)
     const addrParts = [agency.address, agency.city].filter(a => a && String(a).trim());
     const addrHTML = addrParts.length ? `📍 ${addrParts.join(', ')}` : '';
 
-    // 🔢📋 NTN + Licence (sirf bhare hon to show!)
-    const ntnBits = [];
-    if (agency.ntn && String(agency.ntn).trim()) ntnBits.push(`🔢 NTN: ${agency.ntn}`);
-    if (agency.licenceNo && String(agency.licenceNo).trim()) ntnBits.push(`📋 Licence: ${agency.licenceNo}`);
-    const ntnHTML = ntnBits.join(' &nbsp;|&nbsp; ');
-
-    // 💰 Tax row (agar bill mein tax ho!)
+    // 💰 Tax row
     const taxRow = (bill.taxAmount && bill.taxAmount > 0)
         ? `<div><span>Tax (${bill.taxRate || 0}%):</span><span>+ Rs ${bill.taxAmount.toFixed(2)}</span></div>`
         : '';
@@ -697,7 +693,7 @@ function template4Modern(bill, agency, customer) {
         <style>
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 650px; margin: auto; color: #333; }
 
-            /* 🏢 AGENCY HEADER (Logo + details + PAY TYPE right) */
+            /* 🏢 AGENCY HEADER */
             .ag-header {
                 display: flex;
                 align-items: flex-start;
@@ -709,35 +705,31 @@ function template4Modern(bill, agency, customer) {
             .ag-logo img { width: 55px; height: 50px; object-fit: contain; }
             .ag-details { flex: 1; text-align: left; padding: 0 10px; min-width: 0; }
 
-            /* 🆕 NAME + MOBILES EK LINE (name khatam → gap → mobiles!) */
-            .ag-name-row {
-                display: flex;
-                align-items: baseline;
-                gap: 10px;
-                white-space: nowrap;
-                overflow: hidden;
-            }
+            /* 🏢 TITLE — BARA (24px) + auto-shrink! */
+            .ag-name-row { white-space: nowrap; overflow: hidden; }
             .ag-name {
-                font-size: 20px;
+                font-size: 24px;
                 font-weight: 900;
                 color: #1a1a1a;
                 letter-spacing: 0.3px;
-                flex: 0 1 auto;
-                min-width: 0;
+                display: inline-block;
+                max-width: 100%;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-            .ag-mobiles {
-                flex: 0 0 auto;
-                font-size: 11px;
-                font-weight: bold;
-                color: #444;
-            }
-            .ag-mobiles span { margin-right: 8px; }
 
-            /* 📍🔢 Choti lines — sirf bhari hon to show! */
+            /* 📍 Choti line (Address+City) */
             .ag-sub-line { font-size: 10.5px; color: #555; font-weight: 600; margin-top: 2px; word-wrap: break-word; }
+
+            /* 📱🔢 3rd LINE: Mobiles + NTN + Licence */
+            .ag-contact-line {
+                font-size: 11px;
+                color: #333;
+                font-weight: bold;
+                margin-top: 3px;
+                word-wrap: break-word;
+            }
 
             /* 💳 PAY TYPE (right top — bold!) */
             .pay-type {
@@ -761,7 +753,7 @@ function template4Modern(bill, agency, customer) {
             }
             .bill-meta-inner b { color: #2c3e50; }
 
-            /* 👤 CUSTOMER BOX (grey rounded + right meta!) */
+            /* 👤 CUSTOMER BOX */
             .cust-box {
                 background: #f8f9fa;
                 border: 1px solid #e0e6e8;
@@ -813,21 +805,20 @@ function template4Modern(bill, agency, customer) {
         </style>
     </head>
     <body>
-        <!-- 🏢 AGENCY HEADER (jo bhara WOHI show!) -->
+        <!-- 🏢 AGENCY HEADER (Title bara → Address → Mobiles+NTN+Licence) -->
         <div class="ag-header">
             ${agency.logo ? `<div class="ag-logo"><img src="${agency.logo}"></div>` : ''}
             <div class="ag-details">
                 <div class="ag-name-row">
                     <span class="ag-name" id="agName">${agency.name}</span>
-                    ${mobilesHTML ? `<span class="ag-mobiles">${mobilesHTML}</span>` : ''}
                 </div>
                 ${addrHTML ? `<div class="ag-sub-line">${addrHTML}</div>` : ''}
-                ${ntnHTML ? `<div class="ag-sub-line">${ntnHTML}</div>` : ''}
+                ${contactHTML ? `<div class="ag-contact-line">${contactHTML}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
 
-        <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META) -->
+        <!-- 👤 CUSTOMER BOX -->
         <div class="cust-box">
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
@@ -857,7 +848,6 @@ function template4Modern(bill, agency, customer) {
                 </tr>`).join('')}
         </table>
 
-        <!-- 💰 TOTALS -->
         <div class="totals">
             <div><span>Sub Total:</span><span>Rs ${tot.subTotal}</span></div>
             <div><span>Discount:</span><span>- Rs ${tot.discount}</span></div>
@@ -876,17 +866,17 @@ function template4Modern(bill, agency, customer) {
 
         <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
 
-        <!-- 🌟 AUTO-SHRINK (naam jitna lamba, font utna chota — MOBILES SAFE!) -->
+        <!-- 🌟 AUTO-SHRINK (24px se shuru — naam lamba to chota!) -->
         <script>
             (function() {
                 function fitName() {
                     try {
                         var nameEl = document.getElementById('agName');
                         if (!nameEl) return;
-                        var size = 20;
+                        var size = 24;
                         nameEl.style.fontSize = size + 'px';
                         var guard = 0;
-                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 9 && guard < 50) {
+                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 10 && guard < 50) {
                             size -= 0.5;
                             nameEl.style.fontSize = size + 'px';
                             guard++;
