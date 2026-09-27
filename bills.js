@@ -782,7 +782,8 @@ function buildFallbackBillHTML(bill) {
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 700px; margin: auto; color: #222; }
 
             /* 🏢 AGENCY HEADER */
-            .ag-header {
+            
+-header {
                 display: flex;
                 align-items: flex-start;
                 border-bottom: 3px double #333;
@@ -912,7 +913,7 @@ function buildFallbackBillHTML(bill) {
     </head>
     <body>
         <!-- 🏢 AGENCY HEADER (Title bara → Address → Mobiles+NTN+Licence) -->
-        <div class="ag-header">
+                <div class="ag-header">
             ${ag.logoBase64 ? `<div class="ag-logo"><img src="${ag.logoBase64}"></div>` : ''}
             <div class="ag-details">
                 <div class="ag-name-row">
