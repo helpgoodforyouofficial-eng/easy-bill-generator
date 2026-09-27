@@ -136,9 +136,10 @@ auth.onAuthStateChanged(async (user) => {
             const agDoc = await db.collection('agencies').doc(myAgencyId).get();
             myAgency = agDoc.exists ? agDoc.data() : {};
         } catch (e) {}
-        // 🆕 OWNER NAME — Personal Info ka naam bill par show hoga!
+        // 🆕 OWNER NAME + PERSONAL MOBILE — Personal Info se!
         myAgency = myAgency || {};
         myAgency.ownerName = (me.name || '').trim();
+        myAgency.ownerMobile = (me.mobile || '').trim();
 
         setupModeTabs();
         loadCustomers();
@@ -740,10 +741,14 @@ function buildFallbackBillHTML(bill) {
     const bizName = ag.name || 'Easy Bill Generator';
     const payType = bill.payType || ag.payType || 'CASH';
 
-    // 🆕 OWNER NAME (Personal Info se — Title nechay, Address oper!)
+    // 🆕 OWNER NAME + PERSONAL MOBILE (Personal Info se!)
     const ownerNm = String(ag.ownerName || '').trim();
-    const ownerHTML = ownerNm ? `👤 ${ownerNm}` : '';
-
+    const ownerMob = String(ag.ownerMobile || '').trim();
+    const ownerBits = [];
+    if (ownerNm) ownerBits.push(`👤 ${ownerNm}`);
+    if (ownerMob) ownerBits.push(`📱 ${ownerMob}`);
+    const ownerHTML = ownerBits.join('&nbsp;&nbsp;&nbsp;');
+    
     // 📱 SIRF 2 MOBILES — jo bhare hon
     const mobilesArr = [ag.mobile, ag.mobile2]
         .filter(m => m && String(m).trim())
