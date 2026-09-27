@@ -664,6 +664,9 @@ function template4Modern(bill, agency, customer) {
     const dateStr = bill.date || '-';
     const timeStr = bill.time || '-';
     const payType = bill.payType || (agency.payType || 'CASH');
+ // 🆕 OWNER NAME (Title nechay, Address oper!)
+    const ownerNm = String(agency.ownerName || '').trim();
+    const ownerHTML = ownerNm ? `👤 ${ownerNm}` : '';
 
     // 📱 SIRF 2 MOBILES — jo bhare hon
     const mobilesArr = [agency.mobile, agency.mobile2]
