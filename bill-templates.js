@@ -656,23 +656,38 @@ function template3Mix(bill, agency, customer) {
 
 // ============================================
 // 🎨 TEMPLATE 4: ⚡ MODERN MINIMAL (Default!)
-// Aap ka existing clean design — polished!
+// v2 REDESIGN — Fallback jaisa professional header!
+// ✅ Logo (conditional) + Name + 2 Mobiles EK LINE (auto-shrink!)
+// ✅ Address+City / NTN+Licence — choti lines, JO BHARA WOHI SHOW
+// ✅ CASH/CREDIT (right top — bold!)
+// ✅ Customer grey box + Bill Meta right side
 // ============================================
 function template4Modern(bill, agency, customer) {
     const items = getTemplateItems(bill);
     const tot = getTemplateTotals(bill);
     const dateStr = bill.date || '-';
     const timeStr = bill.time || '-';
+    const payType = bill.payType || (agency.payType || 'CASH');
 
-    let agencyLines = '';
-    if (agency.address) agencyLines += `<p>📍 ${agency.address}</p>`;
-    if (agency.mobile) agencyLines += `<p>📱 ${agency.mobile}</p>`;
-    if (agency.ntn) agencyLines += `<p>🔢 NTN: ${agency.ntn}</p>`;
-    if (agency.regNo) agencyLines += `<p>📋 Reg No: ${agency.regNo}</p>`;
-    if (agency.city) agencyLines += `<p>🏙️ ${agency.city}</p>`;
+    // 📱 SIRF 2 MOBILES — jo bhare hon
+    const mobilesArr = [agency.mobile, agency.mobile2]
+        .filter(m => m && String(m).trim())
+        .map(m => `📱 ${String(m).trim()}`);
+    const mobilesHTML = mobilesArr.map(m => `<span>${m}</span>`).join('');
 
+    // 📍 Address + City (sirf bhari hon to show!)
+    const addrParts = [agency.address, agency.city].filter(a => a && String(a).trim());
+    const addrHTML = addrParts.length ? `📍 ${addrParts.join(', ')}` : '';
+
+    // 🔢📋 NTN + Licence (sirf bhare hon to show!)
+    const ntnBits = [];
+    if (agency.ntn && String(agency.ntn).trim()) ntnBits.push(`🔢 NTN: ${agency.ntn}`);
+    if (agency.licenceNo && String(agency.licenceNo).trim()) ntnBits.push(`📋 Licence: ${agency.licenceNo}`);
+    const ntnHTML = ntnBits.join(' &nbsp;|&nbsp; ');
+
+    // 💰 Tax row (agar bill mein tax ho!)
     const taxRow = (bill.taxAmount && bill.taxAmount > 0)
-        ? `<div><span>Tax (GST):</span><span>+ Rs ${bill.taxAmount.toFixed(2)}</span></div>`
+        ? `<div><span>Tax (${bill.taxRate || 0}%):</span><span>+ Rs ${bill.taxAmount.toFixed(2)}</span></div>`
         : '';
 
     return `
@@ -680,52 +695,161 @@ function template4Modern(bill, agency, customer) {
     <head>
         <title>Bill ${bill.billNo}</title>
         <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 25px; max-width: 650px; margin: auto; color: #333; }
-            .biz-header { text-align: center; border-bottom: 3px double #333; padding-bottom: 12px; margin-bottom: 15px; }
-            .biz-header h1 { margin: 0; font-size: 28px; color: #2c3e50; }
-            .biz-header p { margin: 3px 0; font-size: 13px; color: #555; }
-            .bill-meta { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-            .bill-meta div { line-height: 1.7; }
-            .cust-box { background: #f8f9fa; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; line-height: 1.7; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 650px; margin: auto; color: #333; }
+
+            /* 🏢 AGENCY HEADER (Logo + details + PAY TYPE right) */
+            .ag-header {
+                display: flex;
+                align-items: flex-start;
+                border-bottom: 3px double #333;
+                padding-bottom: 8px;
+                margin-bottom: 12px;
+            }
+            .ag-logo { flex: 0 0 auto; display: flex; align-items: center; }
+            .ag-logo img { width: 55px; height: 50px; object-fit: contain; }
+            .ag-details { flex: 1; text-align: left; padding: 0 10px; min-width: 0; }
+
+            /* 🆕 NAME + MOBILES EK LINE (name khatam → gap → mobiles!) */
+            .ag-name-row {
+                display: flex;
+                align-items: baseline;
+                gap: 10px;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+            .ag-name {
+                font-size: 20px;
+                font-weight: 900;
+                color: #1a1a1a;
+                letter-spacing: 0.3px;
+                flex: 0 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .ag-mobiles {
+                flex: 0 0 auto;
+                font-size: 11px;
+                font-weight: bold;
+                color: #444;
+            }
+            .ag-mobiles span { margin-right: 8px; }
+
+            /* 📍🔢 Choti lines — sirf bhari hon to show! */
+            .ag-sub-line { font-size: 10.5px; color: #555; font-weight: 600; margin-top: 2px; word-wrap: break-word; }
+
+            /* 💳 PAY TYPE (right top — bold!) */
+            .pay-type {
+                flex: 0 0 auto;
+                align-self: center;
+                font-size: 22px;
+                font-weight: 900;
+                color: #1a1a1a;
+                letter-spacing: 3px;
+            }
+
+            /* 🧾 BILL META (grey rounded — right side!) */
+            .bill-meta-inner {
+                background: #f8f9fa;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 12px;
+                line-height: 1.9;
+                min-width: 160px;
+            }
+            .bill-meta-inner b { color: #2c3e50; }
+
+            /* 👤 CUSTOMER BOX (grey rounded + right meta!) */
+            .cust-box {
+                background: #f8f9fa;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 10px 14px;
+                margin-bottom: 12px;
+                font-size: 13px;
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .cust-left { flex: 1; min-width: 200px; line-height: 1.8; }
+            .cust-right {
+                flex: 0 0 auto;
+                text-align: left;
+                border-left: 1px dashed #bbb;
+                padding-left: 15px;
+            }
+            .cust-name-big { font-size: 15px; font-weight: bold; color: #1a1a1a; }
+            .cust-addr { color: #444; word-wrap: break-word; max-width: 320px; display: inline; }
+            .cust-label { font-size: 11px; color: #7f8c8d; font-weight: bold; }
+            .dim-value { color: #222; font-weight: 600; }
+
+            /* 📋 ITEMS TABLE */
             table { width: 100%; border-collapse: collapse; margin: 10px 0; }
             th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
             th { background: #f0f0f0; text-align: center; }
             td.qty, td.rate, td.total { text-align: right; }
-            .totals { margin-top: 12px; max-width: 320px; margin-left: auto; }
-            .totals div { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 14px; }
+
+            /* 💰 TOTALS */
+            .totals {
+                margin-top: 12px;
+                max-width: 340px;
+                margin-left: auto;
+                background: #fafbfc;
+                border: 1px solid #e0e6e8;
+                border-radius: 8px;
+                padding: 8px 15px;
+            }
+            .totals div { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 14px; }
             .totals .grand { border-top: 2px solid #333; font-weight: bold; font-size: 15px; }
             .totals .bal { color: #c0392b; font-weight: bold; }
-            .sig-area { margin-top: 45px; text-align: right; }
+
+            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
+            .sig-area { margin-top: 40px; text-align: right; }
             .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
             .footer-note { text-align: center; font-size: 10px; color: #888; margin-top: 25px; font-style: italic; }
-            .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; }
         </style>
     </head>
     <body>
-        <div class="biz-header">
-            <h1>${agency.name}</h1>
-            ${agencyLines}
-        </div>
-        
-        <div class="bill-meta">
-            <div>
-                <b>Bill No:</b> ${bill.billNo}<br>
-                <b>Date:</b> ${billDate}<br>
-                <b>Time:</b> ${billTime}
+        <!-- 🏢 AGENCY HEADER (jo bhara WOHI show!) -->
+        <div class="ag-header">
+            ${agency.logo ? `<div class="ag-logo"><img src="${agency.logo}"></div>` : ''}
+            <div class="ag-details">
+                <div class="ag-name-row">
+                    <span class="ag-name" id="agName">${agency.name}</span>
+                    ${mobilesHTML ? `<span class="ag-mobiles">${mobilesHTML}</span>` : ''}
+                </div>
+                ${addrHTML ? `<div class="ag-sub-line">${addrHTML}</div>` : ''}
+                ${ntnHTML ? `<div class="ag-sub-line">${ntnHTML}</div>` : ''}
             </div>
+            <div class="pay-type">${payType}</div>
         </div>
 
+        <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META) -->
         <div class="cust-box">
-            <b>👤 Customer:</b> ${customer.name}<br>
-            ${customer.mobile ? `📱 ${customer.mobile}<br>` : ''}
-            ${customer.address ? `📍 ${customer.address}` : ''}
+            <div class="cust-left">
+                <span class="cust-label">👤 Customer:</span>
+                <span class="cust-name-big"> ${customer.name}</span>
+                ${customer.mobile ? `<span> &nbsp; 📱 ${customer.mobile}</span>` : ''}
+                ${customer.address ? `<br><span class="cust-label">📍 Address:</span> <span class="cust-addr"> ${customer.address}</span>` : ''}
+                ${bill.customerNTN ? `<br><span class="cust-label">🔢 NTN:</span> <span class="dim-value"> ${bill.customerNTN}</span>` : ''}
+            </div>
+            <div class="cust-right">
+                <div class="bill-meta-inner">
+                    <b>🧾 Bill No:</b> ${bill.billNo}<br>
+                    <b>📅 Date:</b> ${dateStr}<br>
+                    <b>🕐 Time:</b> ${timeStr}
+                </div>
+            </div>
         </div>
 
         <table>
             <tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr>
-            ${items.map((it, i) => `
+            ${items.map(it => `
                 <tr>
-                    <td>${i + 1}</td>
+                    <td>${it.sno}</td>
                     <td>${it.name}</td>
                     <td class="qty">${it.qty}</td>
                     <td class="rate">Rs ${it.rate}</td>
@@ -733,6 +857,7 @@ function template4Modern(bill, agency, customer) {
                 </tr>`).join('')}
         </table>
 
+        <!-- 💰 TOTALS -->
         <div class="totals">
             <div><span>Sub Total:</span><span>Rs ${tot.subTotal}</span></div>
             <div><span>Discount:</span><span>- Rs ${tot.discount}</span></div>
@@ -744,12 +869,34 @@ function template4Modern(bill, agency, customer) {
         </div>
 
         <div class="thanks">🙏 Shukriya! Dobara tashreef layen!</div>
-        
+
         <div class="sig-area">
             <div class="sig-line">Authorized Signature</div>
         </div>
 
         <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
+
+        <!-- 🌟 AUTO-SHRINK (naam jitna lamba, font utna chota — MOBILES SAFE!) -->
+        <script>
+            (function() {
+                function fitName() {
+                    try {
+                        var nameEl = document.getElementById('agName');
+                        if (!nameEl) return;
+                        var size = 20;
+                        nameEl.style.fontSize = size + 'px';
+                        var guard = 0;
+                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 9 && guard < 50) {
+                            size -= 0.5;
+                            nameEl.style.fontSize = size + 'px';
+                            guard++;
+                        }
+                    } catch (e) {}
+                }
+                window.addEventListener('load', fitName);
+                setTimeout(fitName, 100);
+            })();
+        <\/script>
     </body>
     </html>
     `;
