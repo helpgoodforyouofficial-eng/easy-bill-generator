@@ -101,6 +101,7 @@
                     </select>
                 </div>
             </div>
+            <!-- ✅ SIRF 2 MOBILES (Mobile 3 REMOVE!) -->
             <div class="form-row">
                 <div class="form-group">
                     <label>📱 Mobile 1 *</label>
@@ -109,10 +110,6 @@
                 <div class="form-group">
                     <label>📱 Mobile 2 (optional)</label>
                     <input type="tel" id="pfBizMobile2" maxlength="15" placeholder="03xx-xxxxxxx">
-                </div>
-                <div class="form-group">
-                    <label>📱 Mobile 3 (optional)</label>
-                    <input type="tel" id="pfBizMobile3" maxlength="15" placeholder="03xx-xxxxxxx">
                 </div>
             </div>
             <div class="form-row">
@@ -328,7 +325,7 @@
                     document.getElementById('pfBizType').value = ag.businessType || 'other';
                     document.getElementById('pfBizMobile').value = ag.mobile || '';
                     document.getElementById('pfBizMobile2').value = ag.mobile2 || '';
-                    document.getElementById('pfBizMobile3').value = ag.mobile3 || '';
+                    // ✅ Mobile 3 REMOVE — ab load nahi hota
                     document.getElementById('pfBizCity').value = ag.city || '';
                     document.getElementById('pfBizAddress').value = ag.address || '';
                     document.getElementById('pfBizNTN').value = ag.ntn || '';
@@ -408,7 +405,7 @@
     });
 
     // ============================================
-    // 💾 SAVE BUSINESS INFO (Owner only) — 🆕 Saare naye fields!
+    // 💾 SAVE BUSINESS INFO (Owner only) — ✅ SIRF 2 MOBILES!
     // ============================================
     document.getElementById('businessForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -428,13 +425,13 @@
                 name: bizName,
                 businessType: bizType,
                 mobile: document.getElementById('pfBizMobile').value.trim(),
-                mobile2: document.getElementById('pfBizMobile2').value.trim(),     // 🆕
-                mobile3: document.getElementById('pfBizMobile3').value.trim(),     // 🆕
+                mobile2: document.getElementById('pfBizMobile2').value.trim(),
+                // ✅ Mobile 3 REMOVE — DB mein purana mobile3 ho to bhi update nahi hoga
                 city: document.getElementById('pfBizCity').value.trim(),
                 address: document.getElementById('pfBizAddress').value.trim(),
                 ntn: document.getElementById('pfBizNTN').value.trim(),
-                licenceNo: document.getElementById('pfBizLic').value.trim(),       // 🆕
-                payType: document.getElementById('pfPayType').value,               // 🆕
+                licenceNo: document.getElementById('pfBizLic').value.trim(),
+                payType: document.getElementById('pfPayType').value,
                 template: document.getElementById('pfTemplate').value,
                 updatedAt: new Date().toISOString()
             };
