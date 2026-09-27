@@ -727,12 +727,11 @@ function buildBillHTML(bill) {
 }
 
 // ============================================
-// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v3 FINAL)
-// ✅ Logo (left, agar ho) + Naam + Address
-// ✅ 🆕 Owner Name + 2 Mobiles — EK LINE (auto-shrink!)
-// ✅ 🆕 NTN + Licence — EK line (inline, text only)
-// ✅ 🆕 Bill Meta — grey rounded box, Customer box ke ANDAR right!
-// ✅ 🆕 Customer NTN bhi box mein!
+// 🛡️ FALLBACK BILL — PROFESSIONAL LAYOUT (v4 FINAL)
+// ✅ Business Name + 2 Mobiles — EK LINE (name shrink → gap → mobiles!)
+// ✅ SIRF 2 Mobiles (mobile + mobile2) — mobile3 IGNORE!
+// ✅ Address+City / NTN+Licence — small text, JO BHARA WOHI SHOW
+// ✅ Logo conditional (nahi hai to khali jagah NAHI)
 // ✅ CASH/CREDIT (right top — bold!)
 // ============================================
 function buildFallbackBillHTML(bill) {
@@ -740,9 +739,21 @@ function buildFallbackBillHTML(bill) {
     const bizName = ag.name || 'Easy Bill Generator';
     const payType = bill.payType || ag.payType || 'CASH';
 
-    // 📱 EK LINE: Owner Name + 2 Mobiles (naam lamba ho to font khud adjust!)
-    const ownerNm = ag.ownerName || '';
-    const mobilesArr = [ag.mobile, ag.mobile2].filter(m => m && m.trim()).map(m => `📱 ${m}`);
+    // 📱 SIRF 2 MOBILES — jo bhare hon (Mobile 3 ab kahin nahi jayega!)
+    const mobilesArr = [ag.mobile, ag.mobile2]
+        .filter(m => m && String(m).trim())
+        .map(m => `📱 ${String(m).trim()}`);
+    const mobilesHTML = mobilesArr.map(m => `<span>${m}</span>`).join('');
+
+    // 📍 Address + City (sirf bhari hon to show — warna hide!)
+    const addrParts = [ag.address, ag.city].filter(a => a && String(a).trim());
+    const addrHTML = addrParts.length ? `📍 ${addrParts.join(', ')}` : '';
+
+    // 🔢📋 NTN + Licence (sirf bhara ho to show!)
+    const ntnBits = [];
+    if (ag.ntn && String(ag.ntn).trim()) ntnBits.push(`🔢 NTN: ${ag.ntn}`);
+    if (ag.licenceNo && String(ag.licenceNo).trim()) ntnBits.push(`📋 Licence: ${ag.licenceNo}`);
+    const ntnHTML = ntnBits.join(' &nbsp;|&nbsp; ');
 
     // Date/Time fallback
     let billDate = bill.date || '';
@@ -770,77 +781,62 @@ function buildFallbackBillHTML(bill) {
         <title>Bill ${bill.billNo}</title>
         <style>
             body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; max-width: 700px; margin: auto; color: #222; }
-            
-           /* 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) */
+
+            /* 🏢 AGENCY HEADER */
             .ag-header {
                 display: flex;
                 align-items: flex-start;
                 border-bottom: 3px double #333;
-                padding-bottom: 10px;
+                padding-bottom: 8px;
                 margin-bottom: 12px;
             }
-            .ag-logo {
-                width: 60px; min-height: 55px;
-                flex: 0 0 60px;
-                display: flex; align-items: center; justify-content: center;
-            }
-            .ag-logo img { max-width: 60px; max-height: 55px; }
-            .ag-logo .logo-space { width: 60px; }
+            .ag-logo { flex: 0 0 auto; display: flex; align-items: center; }
+            .ag-logo img { width: 55px; height: 50px; object-fit: contain; }
             .ag-details { flex: 1; text-align: left; padding: 0 10px; min-width: 0; }
-            
-            /* 🏢 NAAM — clamp se khud adjust (lamba naam = chota font!) */
-            .ag-name {
-                font-size: clamp(11px, 4vw, 19px);
-                font-weight: 900;
-                color: #1a1a1a;
-                letter-spacing: 0.5px;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            .ag-address { font-size: 11px; color: #444; margin: 2px 0 3px; }
-            
-            /* 📱 OWNER + MOBILES EK LINE (flex — sab fit!) */
-            .ag-contact-line {
+
+            /* 🆕 NAME + MOBILES EK LINE (name khatam → gap → mobiles!) */
+            .ag-name-row {
                 display: flex;
-                align-items: center;
-                gap: 8px;
-                flex-wrap: nowrap;
-                font-size: 12px;
-                color: #444;
-                font-weight: bold;
+                align-items: baseline;
+                gap: 10px;
+                white-space: nowrap;
                 overflow: hidden;
             }
-            /* Naam lamba to ye khud shrink hoga (mobiles sahi rahenge!) */
-            .ag-owner-nm {
+            /* Name lamba → JS se khud shrink — mobiles KABHI nahi katen ge! */
+            .ag-name {
+                font-size: 20px;
                 font-weight: 900;
                 color: #1a1a1a;
-                white-space: nowrap;
+                letter-spacing: 0.3px;
+                flex: 0 1 auto;
+                min-width: 0;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                flex: 1 1 auto;
-                min-width: 0;
+                white-space: nowrap;
             }
-            .ag-owner-nm.small { font-size: 10px !important; }
-            .ag-mobiles span { margin-right: 8px; white-space: nowrap; }
-            
-            /* 🔢📋 NTN + LICENCE (ek line — inline!) */
-            .ag-ntn-line { font-size: 11px; color: #333; font-weight: bold; margin-top: 3px; }
-            
+            /* 📱 Mobiles — SMALL text, kabhi shrink nahi! */
+            .ag-mobiles {
+                flex: 0 0 auto;
+                font-size: 11px;
+                font-weight: bold;
+                color: #444;
+            }
+            .ag-mobiles span { margin-right: 8px; }
+
+            /* 📍🔢 Choti lines — sirf bhari hon to show! */
+            .ag-sub-line { font-size: 10.5px; color: #555; font-weight: 600; margin-top: 2px; word-wrap: break-word; }
+
             /* 💳 PAY TYPE (right top — bold!) */
             .pay-type {
                 flex: 0 0 auto;
-                font-size: 26px;
+                font-size: 24px;
                 font-weight: 900;
                 color: #1a1a1a;
                 letter-spacing: 3px;
                 align-self: center;
             }
 
-            /* 🧾 BILL META (grey rounded — right column ke andar!) */
-            .bill-meta-box {
-                display: flex;
-                justify-content: flex-end;
-            }
+            /* 🧾 BILL META (grey rounded) */
             .bill-meta-inner {
                 background: #f8f9fa;
                 border: 1px solid #e0e6e8;
@@ -851,7 +847,7 @@ function buildFallbackBillHTML(bill) {
                 min-width: 150px;
             }
             .bill-meta-inner b { color: #2c3e50; }
-            
+
             /* 👤 CUSTOMER BOX */
             .cust-box {
                 background: #f8f9fa;
@@ -876,14 +872,14 @@ function buildFallbackBillHTML(bill) {
             .cust-addr { color: #444; word-wrap: break-word; max-width: 320px; display: inline; }
             .cust-label { font-size: 11px; color: #7f8c8d; font-weight: bold; }
             .dim-value { color: #222; font-weight: 600; }
-            
+
             /* 📋 ITEMS TABLE */
             table { width: 100%; border-collapse: collapse; margin: 10px 0; }
             th, td { border: 1px solid #444; padding: 7px 8px; text-align: left; font-size: 13px; }
             th { background: #f0f0f0; text-align: center; }
             td.qty, td.rate, td.total { text-align: right; }
-            
-            /* 💰 TOTALS (labels + amounts SAATH — right block!) */
+
+            /* 💰 TOTALS */
             .totals {
                 margin-top: 12px;
                 max-width: 340px;
@@ -914,7 +910,7 @@ function buildFallbackBillHTML(bill) {
                 border-radius: 6px;
                 padding: 4px 8px;
             }
-            
+
             .thanks { text-align: center; font-weight: bold; margin-top: 15px; color: #2c3e50; font-size: 14px; }
             .sig-area { margin-top: 40px; text-align: right; }
             .sig-line { border-top: 1px solid #333; width: 160px; display: inline-block; padding-top: 5px; font-weight: bold; }
@@ -922,24 +918,21 @@ function buildFallbackBillHTML(bill) {
         </style>
     </head>
     <body>
-        <!-- 🏢 AGENCY HEADER (Logo left + details + PAY TYPE right) -->
+        <!-- 🏢 AGENCY HEADER (jo bhara WOHI show!) -->
         <div class="ag-header">
-            <div class="ag-logo">
-                ${(ag.logoBase64) 
-                    ? `<img src="${ag.logoBase64}">` 
-                    : `<div class="logo-space"></div>`}
-            </div>
+            ${ag.logoBase64 ? `<div class="ag-logo"><img src="${ag.logoBase64}"></div>` : ''}
             <div class="ag-details">
-                <div class="ag-name">${bizName}</div>
-                ${ag.address ? `<div class="ag-address"> Address: ${ag.address}</div>` : ''}
-                <!-- 🆕 EK LINE: Owner Name + 2 Mobiles -->
-                ${(ownerNm || mobilesArr.length > 0) ? `<div class="ag-contact-line" id="agContactLine"><span class="ag-owner-nm" id="agOwnerName" data-name="${ownerNm}">${ownerNm}</span>${mobilesArr.map(m => `<span>${m}</span>`).join(' ')}</div>` : ''}
-                ${(ag.ntn || ag.licenceNo) ? `<div class="ag-ntn-line">NTN: ${ag.ntn || '—'}${ag.licenceNo ? ` | Licence: ${ag.licenceNo}` : ''}</div>` : ''}
+                <div class="ag-name-row">
+                    <span class="ag-name" id="agName">${bizName}</span>
+                    ${mobilesHTML ? `<span class="ag-mobiles">${mobilesHTML}</span>` : ''}
+                </div>
+                ${addrHTML ? `<div class="ag-sub-line">${addrHTML}</div>` : ''}
+                ${ntnHTML ? `<div class="ag-sub-line">${ntnHTML}</div>` : ''}
             </div>
             <div class="pay-type">${payType}</div>
         </div>
 
-        <!-- 👤 CUSTOMER BOX (left details + RIGHT BILL META — ek sath!) -->
+        <!-- 👤 CUSTOMER BOX -->
         <div class="cust-box">
             <div class="cust-left">
                 <span class="cust-label">👤 Customer:</span>
@@ -969,7 +962,7 @@ function buildFallbackBillHTML(bill) {
                 </tr>`).join('')}
         </table>
 
-        <!-- 💰 TOTALS (labels + amounts saath!) -->
+        <!-- 💰 TOTALS -->
         <div class="totals">
             <div><span class="label">Sub Total:</span><span>Rs ${(bill.subTotal || 0).toFixed(2)}</span></div>
             <div><span class="label">Discount:</span><span>- Rs ${(bill.discount || 0).toFixed(2)}</span></div>
@@ -981,39 +974,34 @@ function buildFallbackBillHTML(bill) {
         </div>
 
         <div class="thanks"> Shukriya! Dobara tashreef layen!</div>
-        
+
         <div class="sig-area">
             <div class="sig-line">Authorized Signature</div>
         </div>
 
         <div class="footer-note">Bill ${bill.billNo} — Easy Bill Generator se generate hua hai.</div>
 
-        <!-- 🌟 AUTO-SHRINK SCRIPT (Print window ke ANDAR — yahan chalega!) -->
+        <!-- 🌟 AUTO-SHRINK (naam jitna lamba, font utna chota — MOBILES SAFE!) -->
         <script>
-            // Owner name lamba ho to font chota karo!
-            // (Mobile numbers sahi size mein rahenge — sirf naam adjust hoga!)
-            window.addEventListener('load', function() {
-                setTimeout(function() {
+            (function() {
+                function fitName() {
                     try {
-                        var nameEl = document.getElementById('agOwnerName');
+                        var nameEl = document.getElementById('agName');
                         if (!nameEl) return;
-                        
-                        var rawName = nameEl.getAttribute('data-name') || nameEl.innerText;
-                        if (!rawName || rawName.trim() === '') return;
-                        
-                        var words = rawName.split(/\\s+/).length;
-                        var fontSize = 13;
-                        
-                        if (words >= 6) fontSize = 9;
-                        else if (words >= 5) fontSize = 10;
-                        else if (words >= 4) fontSize = 11;
-                        else if (words >= 3) fontSize = 12;
-                        
-                        nameEl.style.fontSize = fontSize + 'px';
+                        var size = 20;
+                        nameEl.style.fontSize = size + 'px';
+                        var guard = 0;
+                        while (nameEl.scrollWidth > nameEl.clientWidth && size > 9 && guard < 50) {
+                            size -= 0.5;
+                            nameEl.style.fontSize = size + 'px';
+                            guard++;
+                        }
                     } catch (e) { console.warn('Auto-shrink:', e); }
-                }, 50);
-            });
-        </script>
+                }
+                window.addEventListener('load', fitName);
+                setTimeout(fitName, 100);
+            })();
+        <\/script>
     </body>
     </html>
     `;
