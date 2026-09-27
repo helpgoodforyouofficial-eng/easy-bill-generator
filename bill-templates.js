@@ -665,10 +665,16 @@ function template4Modern(bill, agency, customer) {
     const timeStr = bill.time || '-';
     const payType = bill.payType || (agency.payType || 'CASH');
 
-    // 🆕 OWNER NAME (Title nechay, Address oper!)
+    // 🆕 OWNER NAME + PERSONAL MOBILE (naam ke baad thora space!)
     const ownerNm = String(agency.ownerName || '').trim();
-    const ownerHTML = ownerNm ? `👤 ${ownerNm}` : '';
-
+    const ownerMob = String(agency.ownerMobile || '').trim();
+    const ownerBits = [];
+    if (ownerNm) ownerBits.push(`👤 ${ownerNm}`);
+    if (ownerMob) ownerBits.push(`📱 ${ownerMob}`);
+    const ownerHTML = ownerBits.join('&nbsp;&nbsp;&nbsp;');
+    
+    
+    
     // 📱 SIRF 2 MOBILES — jo bhare hon
     const mobilesArr = [agency.mobile, agency.mobile2]
         .filter(m => m && String(m).trim())
